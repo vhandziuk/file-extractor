@@ -12,7 +12,8 @@ await Parser.Default
             var executablePath = Path.GetDirectoryName(
                 Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
             var configurationPath = options.Configuration ?? Path.Combine(executablePath, "configuration.csv");
-            var outputPath = options.Output ?? executablePath;
+            var sourcePath = options.Source ?? executablePath;
+            var destinationPath = options.Destination ?? executablePath;
 
 
             var fileNameProvider = new CsvFileNameProvider(configurationPath);
@@ -20,8 +21,8 @@ await Parser.Default
 
             await zipFileExtractor.ExtractFiles(
                 Directory
-                    .EnumerateFiles(executablePath)
+                    .EnumerateFiles(sourcePath)
                     .Where(x => x.EndsWith(".zip")),
                 fileNameProvider.EnumerateFiles(),
-                outputPath);
+                destinationPath);
         });
