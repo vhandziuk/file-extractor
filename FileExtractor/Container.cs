@@ -9,7 +9,7 @@ namespace FileExtractor;
 [Register(typeof(ZipFileExtractor), Scope.SingleInstance, typeof(IZipFileExtractor))]
 [Register(typeof(CsvFileNameProvider), Scope.SingleInstance, typeof(ICsvFileNameProvider))]
 [Register(typeof(TaskRunner), Scope.SingleInstance, typeof(ITaskRunner))]
-[Register(typeof(ExtractFlow), Scope.SingleInstance, typeof(IExtractFlow))]
-internal partial class Container : IAsyncContainer<IExtractFlow>
+[Register(typeof(App), Scope.SingleInstance, typeof(IApp))]
+internal partial class Container : IAsyncContainer<IApp>
 {
 }

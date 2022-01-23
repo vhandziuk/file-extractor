@@ -3,13 +3,13 @@ using FileExtractor.Utils;
 
 namespace FileExtractor;
 
-internal sealed class ExtractFlow : IExtractFlow
+internal sealed class App : IApp
 {
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly ICsvFileNameProvider _fileNameProvider;
     private readonly IZipFileExtractor _zipFileExtractor;
 
-    public ExtractFlow(
+    public App(
         IFileSystemUtils fileSystemUtils,
         ICsvFileNameProvider fileNameProvider,
         IZipFileExtractor zipFileExtractor)
@@ -19,7 +19,7 @@ internal sealed class ExtractFlow : IExtractFlow
         _zipFileExtractor = zipFileExtractor;
     }
 
-    public async ValueTask Extract(string sourcePath, string destinationPath, string configurationPath)
+    public async ValueTask Run(string sourcePath, string destinationPath, string configurationPath)
     {
         await _zipFileExtractor.ExtractFiles(
                 _fileSystemUtils

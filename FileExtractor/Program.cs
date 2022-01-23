@@ -15,5 +15,5 @@ await Parser.Default
             var destinationPath = options.Destination ?? executablePath;
 
             await using var container = new Container();
-            await container.RunAsync(async x => await x.Extract(sourcePath, destinationPath, configurationPath));
+            await container.RunAsync(async x => await x.Run(sourcePath, destinationPath, configurationPath));
         });
