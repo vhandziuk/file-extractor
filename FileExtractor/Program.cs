@@ -1,8 +1,11 @@
 ﻿using System.Reflection;
 using CommandLine;
 using FileExtractor;
+using FileExtractor.Data;
+using FileExtractor.Utils;
 
-await Parser.Default.ParseArguments<CommandLineOptions>(args)
+await Parser.Default
+    .ParseArguments<CommandLineOptions>(args)
     .WithParsedAsync(
         async options =>
         {
