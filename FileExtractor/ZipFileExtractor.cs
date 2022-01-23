@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 
 namespace FileExtractor
@@ -11,7 +12,7 @@ namespace FileExtractor
             _taskRunner = taskRunner;
         }
 
-        public async Task ExtractFiles(IEnumerable<string> archives, IAsyncEnumerable<FileInfoData> fileData)
+        public async Task ExtractFiles(IEnumerable<string> archives, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
         {
             await _taskRunner.Run<Task>(
                 async () =>
@@ -34,7 +35,11 @@ namespace FileExtractor
                                                        : file.DirectoryName?.Equals(info.Directory?.Name, StringComparison.OrdinalIgnoreCase) == true);
                                     }) is ZipArchiveEntry zipEntry)
                             {
-                                var extractedPath = Path.Combine(Directory.GetCurrentDirectory(), "Extracted");
+                                var extractedPath =
+                                    outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
+                                        ? outputPath
+                                        : Path.Combine(outputPath, "Extracted");
+
                                 if (!Directory.Exists(extractedPath))
                                     Directory.CreateDirectory(extractedPath);
 
