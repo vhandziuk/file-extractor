@@ -6,10 +6,17 @@ namespace FileExtractor.Utils;
 
 internal sealed class ZipFileExtractor : IZipFileExtractor
 {
+    private readonly IFileSystemUtils _fileSystemUtils;
+    private readonly IZipFileUtils _zipFileUtils;
     private readonly ITaskRunner _taskRunner;
 
-    public ZipFileExtractor(ITaskRunner taskRunner)
+    public ZipFileExtractor(
+        IFileSystemUtils fileSystemUtils,
+        IZipFileUtils zipFileUtils,
+        ITaskRunner taskRunner)
     {
+        _fileSystemUtils = fileSystemUtils;
+        _zipFileUtils = zipFileUtils;
         _taskRunner = taskRunner;
     }
 
@@ -18,35 +25,12 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         await _taskRunner.Run<Task>(
             async () =>
             {
-                ZipArchive[]? zipArchives = null;
+                ZipArchive[] zipArchives = null;
                 try
                 {
-                    zipArchives = archives.Select(ZipFile.OpenRead).ToArray();
+                    zipArchives = archives.Select(_zipFileUtils.OpenRead).ToArray();
                     var zipEntries = GetEntries(zipArchives).ToArray();
-
-                    await foreach (var file in fileData)
-                    {
-                        if (zipEntries.FirstOrDefault(
-                                entry =>
-                                {
-                                    var info = new FileInfo(entry.FullName);
-                                    return file.Name?.Equals(info.Name, StringComparison.OrdinalIgnoreCase) == true
-                                           && (string.IsNullOrEmpty(file.DirectoryName)
-                                                   ? true
-                                                   : file.DirectoryName?.Equals(info.Directory?.Name, StringComparison.OrdinalIgnoreCase) == true);
-                                }) is ZipArchiveEntry zipEntry)
-                        {
-                            var extractedPath =
-                                outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
-                                    ? outputPath
-                                    : Path.Combine(outputPath, "Extracted");
-
-                            if (!Directory.Exists(extractedPath))
-                                Directory.CreateDirectory(extractedPath);
-
-                            zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name));
-                        }
-                    }
+                    await ExtractInternal(zipEntries, fileData, outputPath);
                 }
                 finally
                 {
@@ -57,6 +41,38 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
             });
     }
 
-    private IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
+    private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
+
+    private async Task ExtractInternal(ZipArchiveEntry[] zipEntries, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
+    {
+        await foreach (var file in fileData)
+        {
+            if (zipEntries.FirstOrDefault(entry => ContainsEntry(file, entry)) is ZipArchiveEntry zipEntry)
+            {
+                var extractedPath = GetExtractedPath(outputPath);
+
+                if (!_fileSystemUtils.DirectoryExists(extractedPath))
+                    _fileSystemUtils.CreateDirectory(extractedPath);
+
+                zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name));
+            }
+        }
+    }
+
+    private static bool ContainsEntry(FileInfoData file, ZipArchiveEntry entry)
+    {
+        var info = new FileInfo(entry.FullName);
+        return file.Name?.Equals(info.Name, StringComparison.OrdinalIgnoreCase) == true
+               && (string.IsNullOrEmpty(file.DirectoryName)
+                       ? true
+                       : file.DirectoryName?.Equals(info.Directory?.Name, StringComparison.OrdinalIgnoreCase) == true);
+    }
+
+    private static string GetExtractedPath(string outputPath)
+    {
+        return outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
+               ? outputPath
+               : Path.Combine(outputPath, "Extracted");
+    }
 }

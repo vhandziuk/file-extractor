@@ -9,18 +9,19 @@ await Parser.Default
     .WithParsedAsync(
         async options =>
         {
+            var fileSystemUtils = new FileSystemUtils();
             var executablePath = Path.GetDirectoryName(
-                Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
+                Assembly.GetExecutingAssembly().Location) ?? fileSystemUtils.GetCurrentDirectory();
+
             var configurationPath = options.Configuration ?? Path.Combine(executablePath, "configuration.csv");
             var sourcePath = options.Source ?? executablePath;
             var destinationPath = options.Destination ?? executablePath;
 
-
             var fileNameProvider = new CsvFileNameProvider(configurationPath);
-            var zipFileExtractor = new ZipFileExtractor(new TaskRunner());
+            var zipFileExtractor = new ZipFileExtractor(fileSystemUtils, new ZipFileUtils(), new TaskRunner());
 
             await zipFileExtractor.ExtractFiles(
-                Directory
+                fileSystemUtils
                     .EnumerateFiles(sourcePath)
                     .Where(x => x.EndsWith(".zip")),
                 fileNameProvider.EnumerateFiles(),
