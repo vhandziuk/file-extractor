@@ -44,7 +44,7 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private async Task ExtractInternal(ZipArchiveEntry[] zipEntries, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
+    private async ValueTask ExtractInternal(ZipArchiveEntry[] zipEntries, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
     {
         await foreach (var file in fileData)
         {

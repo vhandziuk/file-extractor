@@ -1,17 +1,10 @@
 namespace FileExtractor.Data;
 
-internal sealed class CsvFileNameProvider : IFileNameProvider
+internal sealed class CsvFileNameProvider : ICsvFileNameProvider
 {
-    private readonly string _filePath;
-
-    public CsvFileNameProvider(string filePath)
+    public async IAsyncEnumerable<FileInfoData> EnumerateFiles(string filePath)
     {
-        _filePath = filePath;
-    }
-
-    public async IAsyncEnumerable<FileInfoData> EnumerateFiles()
-    {
-        using (var stream = new FileStream(_filePath, FileMode.Open, FileAccess.Read))
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
         using (var reader = new StreamReader(stream))
         {
             while (await reader.ReadLineAsync() is string line)
