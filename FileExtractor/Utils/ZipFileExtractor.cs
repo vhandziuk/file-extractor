@@ -49,19 +49,21 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
             _fileSystemUtils.CreateDirectory(extractedPath);
 
-        var data = await fileData.ToDictionaryAsync(entry => entry.Name);
-        foreach (var zipEntry in zipEntries.Where(entry => ShouldBeExtracted(entry, data)))
-            zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
+        await foreach (var file in fileData)
+        {
+            if (zipEntries.FirstOrDefault(entry => ContainsEntry(file, entry)) is ZipArchiveEntry zipEntry)
+                zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
+        }
     }
+
+    private static bool ContainsEntry(FileInfoData file, ZipArchiveEntry entry) =>
+        entry.Name.Equals(file.Name, StringComparison.OrdinalIgnoreCase)
+        && (string.IsNullOrEmpty(file.DirectoryName)
+            ? true
+            : Path.GetDirectoryName(entry.FullName).EndsWith(file.DirectoryName, StringComparison.OrdinalIgnoreCase));
 
     private static string GetExtractedPath(string outputPath) =>
         outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)
             ? outputPath
             : Path.Combine(outputPath, "Extracted");
-
-    private static bool ShouldBeExtracted(ZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
-        data.ContainsKey(entry.Name)
-        && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
-            ? true
-            : Path.GetDirectoryName(entry.FullName).EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase));
 }
