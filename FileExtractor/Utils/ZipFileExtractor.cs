@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using System.IO.Compression;
 using FileExtractor.Data;
 
@@ -56,7 +55,7 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     }
 
     private static string GetExtractedPath(string outputPath) =>
-        outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
+        outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)
             ? outputPath
             : Path.Combine(outputPath, "Extracted");
 
