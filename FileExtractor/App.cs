@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using FileExtractor.Data;
 using FileExtractor.Utils;
 
@@ -21,10 +22,13 @@ internal sealed class App : IApp
 
     public async ValueTask Run(string sourcePath, string destinationPath, string configurationPath)
     {
+        var archives = _fileSystemUtils
+            .EnumerateFiles(sourcePath)
+            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            .ToImmutableArray();
+
         await _zipFileExtractor.ExtractFiles(
-                _fileSystemUtils
-                    .EnumerateFiles(sourcePath)
-                    .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)),
+                archives,
                 destinationPath,
                 _fileNameProvider.EnumerateFiles(configurationPath));
     }

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Globalization;
 using System.IO.Compression;
 using FileExtractor.Data;
@@ -41,10 +41,10 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
             });
     }
 
-    private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
-        zipArchives.SelectMany(archive => archive.Entries);
+    private static IImmutableList<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
+        zipArchives.SelectMany(archive => archive.Entries).ToImmutableList();
 
-    private async ValueTask ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    private async ValueTask ExtractInternal(IImmutableList<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))

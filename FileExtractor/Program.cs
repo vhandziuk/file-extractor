@@ -12,8 +12,8 @@ await Parser.Default
 
             var configurationPath = options.Configuration ?? Path.Combine(executablePath, "configuration.csv");
             var sourcePath = options.Source ?? executablePath;
-            var destinationPath = options.Destination ?? executablePath;
+            var destinationPath = options.Destination ?? sourcePath;
 
             await using var container = new Container();
-            await container.RunAsync(async x => await x.Run(sourcePath, destinationPath, configurationPath));
+            await container.RunAsync(async app => await app.Run(sourcePath, destinationPath, configurationPath));
         });
