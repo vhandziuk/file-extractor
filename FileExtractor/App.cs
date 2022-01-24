@@ -24,8 +24,8 @@ internal sealed class App : IApp
         await _zipFileExtractor.ExtractFiles(
                 _fileSystemUtils
                     .EnumerateFiles(sourcePath)
-                    .Where(x => x.EndsWith(".zip")),
-                _fileNameProvider.EnumerateFiles(configurationPath),
-                destinationPath);
+                    .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)),
+                destinationPath,
+                _fileNameProvider.EnumerateFiles(configurationPath));
     }
 }

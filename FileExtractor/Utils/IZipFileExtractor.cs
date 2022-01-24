@@ -4,5 +4,5 @@ namespace FileExtractor.Utils;
 
 internal interface IZipFileExtractor
 {
-    Task ExtractFiles(IEnumerable<string> archives, IAsyncEnumerable<FileInfoData> fileData, string outputPath);
+    ValueTask ExtractFiles(IEnumerable<string> archives, string outputPath, IAsyncEnumerable<FileInfoData> fileData);
 }

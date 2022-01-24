@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO.Compression;
 using FileExtractor.Data;
@@ -20,23 +21,22 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         _taskRunner = taskRunner;
     }
 
-    public async Task ExtractFiles(IEnumerable<string> archives, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
+    public async ValueTask ExtractFiles(IEnumerable<string> archives, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
-        await _taskRunner.Run<Task>(
+        await _taskRunner.Run(
             async () =>
             {
-                ZipArchive[] zipArchives = null;
+                var zipArchives = Enumerable.Empty<ZipArchive>();
                 try
                 {
-                    zipArchives = archives.Select(_zipFileUtils.OpenRead).ToArray();
-                    var zipEntries = GetEntries(zipArchives).ToArray();
-                    await ExtractInternal(zipEntries, fileData, outputPath);
+                    zipArchives = archives.Select(_zipFileUtils.OpenRead);
+                    var zipEntries = GetEntries(zipArchives);
+                    await ExtractInternal(zipEntries, outputPath, fileData);
                 }
                 finally
                 {
-                    if (zipArchives != null)
-                        foreach (var archive in zipArchives)
-                            archive.Dispose();
+                    foreach (var archive in zipArchives)
+                        archive.Dispose();
                 }
             });
     }
@@ -44,35 +44,25 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private async ValueTask ExtractInternal(ZipArchiveEntry[] zipEntries, IAsyncEnumerable<FileInfoData> fileData, string outputPath)
+    private async ValueTask ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
-        await foreach (var file in fileData)
-        {
-            if (zipEntries.FirstOrDefault(entry => ContainsEntry(file, entry)) is ZipArchiveEntry zipEntry)
-            {
-                var extractedPath = GetExtractedPath(outputPath);
+        var extractedPath = GetExtractedPath(outputPath);
+        if (!_fileSystemUtils.DirectoryExists(extractedPath))
+            _fileSystemUtils.CreateDirectory(extractedPath);
 
-                if (!_fileSystemUtils.DirectoryExists(extractedPath))
-                    _fileSystemUtils.CreateDirectory(extractedPath);
-
-                zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name));
-            }
-        }
+        var data = await fileData.ToDictionaryAsync(entry => entry.Name);
+        foreach (var zipEntry in zipEntries.Where(entry => ShouldBeExtracted(entry, data)))
+            zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
     }
 
-    private static bool ContainsEntry(FileInfoData file, ZipArchiveEntry entry)
-    {
-        var info = new FileInfo(entry.FullName);
-        return file.Name?.Equals(info.Name, StringComparison.OrdinalIgnoreCase) == true
-               && (string.IsNullOrEmpty(file.DirectoryName)
-                       ? true
-                       : file.DirectoryName?.Equals(info.Directory?.Name, StringComparison.OrdinalIgnoreCase) == true);
-    }
+    private static string GetExtractedPath(string outputPath) =>
+        outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
+            ? outputPath
+            : Path.Combine(outputPath, "Extracted");
 
-    private static string GetExtractedPath(string outputPath)
-    {
-        return outputPath.EndsWith(value: "Extracted", ignoreCase: true, culture: CultureInfo.InvariantCulture)
-               ? outputPath
-               : Path.Combine(outputPath, "Extracted");
-    }
+    private static bool ShouldBeExtracted(ZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
+        data.ContainsKey(entry.Name)
+        && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
+            ? true
+            : Path.GetDirectoryName(entry.FullName).EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase));
 }
