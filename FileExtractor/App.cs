@@ -20,7 +20,7 @@ internal sealed class App : IApp
         _zipFileExtractor = zipFileExtractor;
     }
 
-    public async ValueTask Run(string sourcePath, string destinationPath, string configurationPath)
+    public async Task Run(string sourcePath, string destinationPath, string configurationPath)
     {
         var archives = _fileSystemUtils
             .EnumerateFiles(sourcePath)

@@ -20,7 +20,7 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         _taskRunner = taskRunner;
     }
 
-    public async ValueTask ExtractFiles(IEnumerable<string> archives, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    public async Task ExtractFiles(IEnumerable<string> archives, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
         await _taskRunner.Run(
             async () =>
@@ -40,10 +40,10 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
             });
     }
 
-    private static IImmutableList<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
+    private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries).ToImmutableList();
 
-    private async ValueTask ExtractInternal(IImmutableList<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    private async Task ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
