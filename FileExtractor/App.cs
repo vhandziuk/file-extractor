@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using FileExtractor.Data;
 using FileExtractor.Utils;
 
@@ -20,12 +19,11 @@ internal sealed class App : IApp
         _zipFileExtractor = zipFileExtractor;
     }
 
-    public async Task Run(string sourcePath, string destinationPath, string configurationPath)
+    public async Task RunAsync(string sourcePath, string destinationPath, string configurationPath)
     {
         var archives = _fileSystemUtils
-            .EnumerateFiles(sourcePath)
-            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            .ToImmutableArray();
+            .GetFiles(sourcePath)
+            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
 
         await _zipFileExtractor.ExtractFiles(
                 archives,

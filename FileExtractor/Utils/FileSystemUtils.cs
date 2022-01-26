@@ -6,5 +6,5 @@ internal sealed class FileSystemUtils : IFileSystemUtils
 
     public bool DirectoryExists(string path) => Directory.Exists(path);
 
-    public IEnumerable<string> EnumerateFiles(string path) => Directory.EnumerateFiles(path);
+    public string[] GetFiles(string path) => Directory.GetFiles(path);
 }

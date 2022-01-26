@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.IO.Compression;
 using FileExtractor.Data;
 
@@ -41,26 +40,32 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     }
 
     private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
-        zipArchives.SelectMany(archive => archive.Entries).ToImmutableList();
+        zipArchives.SelectMany(archive => archive.Entries);
 
-    private async Task ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    private async ValueTask ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
     {
+        if (zipEntries?.Any() != true)
+            return;
+        if (fileData == null)
+            return;
+
+        var data = await fileData.ToDictionaryAsync(entry => entry.Name);
+        if (!data.Any())
+            return;
+
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
             _fileSystemUtils.CreateDirectory(extractedPath);
 
-        await foreach (var file in fileData)
-        {
-            if (zipEntries.FirstOrDefault(entry => ContainsEntry(file, entry)) is ZipArchiveEntry zipEntry)
-                zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
-        }
+        foreach (var zipEntry in zipEntries.Where(entry => ContainsEntry(entry, data)))
+            zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
     }
 
-    private static bool ContainsEntry(FileInfoData file, ZipArchiveEntry entry) =>
-        entry.Name.Equals(file.Name, StringComparison.OrdinalIgnoreCase)
-        && (string.IsNullOrEmpty(file.DirectoryName)
+    private static bool ContainsEntry(ZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
+        data.ContainsKey(entry.Name)
+        && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
             ? true
-            : Path.GetDirectoryName(entry.FullName).EndsWith(file.DirectoryName, StringComparison.OrdinalIgnoreCase));
+            : Path.GetDirectoryName(entry.FullName).EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase));
 
     private static string GetExtractedPath(string outputPath) =>
         outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)
