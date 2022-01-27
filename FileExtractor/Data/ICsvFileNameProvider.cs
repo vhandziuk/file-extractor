@@ -2,5 +2,5 @@ namespace FileExtractor.Data;
 
 internal interface ICsvFileNameProvider
 {
-    IAsyncEnumerable<FileInfoData> EnumerateFiles(string filePath);
+    IEnumerable<FileInfoData> EnumerateFiles(string filePath);
 }

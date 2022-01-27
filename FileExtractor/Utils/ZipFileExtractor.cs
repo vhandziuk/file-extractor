@@ -19,17 +19,17 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         _taskRunner = taskRunner;
     }
 
-    public async Task ExtractFiles(IEnumerable<string> archives, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    public async Task ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         await _taskRunner.Run(
-            async () =>
+            () =>
             {
                 var zipArchives = Enumerable.Empty<ZipArchive>();
                 try
                 {
                     zipArchives = archives.Select(_zipFileUtils.OpenRead);
                     var zipEntries = GetEntries(zipArchives);
-                    await ExtractInternal(zipEntries, outputPath, fileData);
+                    ExtractInternal(zipEntries, outputPath, fileData);
                 }
                 finally
                 {
@@ -42,16 +42,14 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private async ValueTask ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IAsyncEnumerable<FileInfoData> fileData)
+    private void ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (zipEntries?.Any() != true)
             return;
-        if (fileData == null)
+        if (fileData?.Any() != true)
             return;
 
-        var data = await fileData.ToDictionaryAsync(entry => entry.Name);
-        if (!data.Any())
-            return;
+        var data = fileData.ToDictionaryAsync(entry => entry.Name);
 
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
