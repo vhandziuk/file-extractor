@@ -49,7 +49,7 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         if (fileData?.Any() != true)
             return;
 
-        var data = fileData.ToDictionaryAsync(entry => entry.Name);
+        var data = fileData.ToDictionary(entry => entry.Name);
 
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
