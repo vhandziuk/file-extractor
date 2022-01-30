@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using CommandLine;
+﻿using CommandLine;
 using FileExtractor;
 
 await Parser.Default
@@ -7,13 +6,6 @@ await Parser.Default
     .WithParsedAsync(
         async options =>
         {
-            var executablePath = Path.GetDirectoryName(
-                Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
-
-            var configurationPath = options.Configuration ?? Path.Combine(executablePath, "configuration.csv");
-            var sourcePath = options.Source ?? executablePath;
-            var destinationPath = options.Destination ?? sourcePath;
-
             await using var container = new Container();
-            await container.RunAsync(async app => await app.RunAsync(sourcePath, destinationPath, configurationPath));
+            await container.RunAsync(async app => await app.RunAsync(options));
         });

@@ -2,7 +2,7 @@ using CommandLine;
 
 namespace FileExtractor;
 
-internal sealed class CommandLineOptions
+internal sealed class CommandLineOptions : ICommandLineOptions
 {
 #pragma warning disable 8618
     [Option('c', "configuration", Required = false, HelpText = "Path to a CSV configuration file")]
