@@ -9,21 +9,25 @@ internal sealed class App : IApp
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly ICsvFileInfoProvider _fileInfoProvider;
     private readonly IZipFileExtractor _zipFileExtractor;
+    private readonly ILogger<App> _logger;
 
     public App(
         IFileSystemUtils fileSystemUtils,
         ICsvFileInfoProvider fileInfoProvider,
-        IZipFileExtractor zipFileExtractor)
+        IZipFileExtractor zipFileExtractor,
+        ILogger<App> logger)
     {
         _fileSystemUtils = fileSystemUtils;
         _fileInfoProvider = fileInfoProvider;
         _zipFileExtractor = zipFileExtractor;
+        _logger = logger;
     }
 
     public async ValueTask RunAsync(ICommandLineOptions options)
     {
-        var executablePath = Path.GetDirectoryName(
-            Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
+        var executablePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            ?? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+            ?? Directory.GetCurrentDirectory();
 
         var sourcePath = options.Source ?? executablePath;
         var destinationPath = options.Destination ?? sourcePath;
@@ -34,11 +38,20 @@ internal sealed class App : IApp
             .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
 
         if (!archives.Any())
+        {
+            _logger.Warning("Source directory contains no .zip files. The program will now exit");
             return;
+        }
 
-        await _zipFileExtractor.ExtractFiles(
-                archives,
-                destinationPath,
-                _fileInfoProvider.EnumerateEntries(configurationPath));
+        var fileData = _fileInfoProvider
+            .EnumerateEntries(configurationPath);
+
+        if (!fileData.Any())
+        {
+            _logger.Warning("Supplied configuration contains files to extract. The program will now exit");
+            return;
+        }
+
+        await _zipFileExtractor.ExtractFiles(archives, destinationPath, fileData);
     }
 }

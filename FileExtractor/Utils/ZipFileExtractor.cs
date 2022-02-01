@@ -8,15 +8,18 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly IZipFileUtils _zipFileUtils;
     private readonly ITaskRunner _taskRunner;
+    private readonly ILogger<ZipFileExtractor> _logger;
 
     public ZipFileExtractor(
         IFileSystemUtils fileSystemUtils,
         IZipFileUtils zipFileUtils,
-        ITaskRunner taskRunner)
+        ITaskRunner taskRunner,
+        ILogger<ZipFileExtractor> logger)
     {
         _fileSystemUtils = fileSystemUtils;
         _zipFileUtils = zipFileUtils;
         _taskRunner = taskRunner;
+        _logger = logger;
     }
 
     public async Task ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData)
@@ -45,9 +48,10 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
     private void ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (zipEntries?.Any() != true)
+        {
+            _logger.Warning("The supplied archive(s) contain no entries");
             return;
-        if (fileData?.Any() != true)
-            return;
+        }
 
         var data = fileData.ToDictionary(entry => entry.Name);
 
@@ -55,8 +59,25 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
             _fileSystemUtils.CreateDirectory(extractedPath);
 
+        _logger.Information("Processing files");
+
+        var extractedFileNames = new HashSet<string>();
         foreach (var zipEntry in zipEntries.Where(entry => ContainsEntry(entry, data)))
+        {
+            _logger.Information("Extracting file {File} to {Path}", zipEntry.Name, extractedPath);
             zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
+            extractedFileNames.Add(zipEntry.Name);
+        }
+
+        extractedFileNames.SymmetricExceptWith(data.Keys);
+        if (!extractedFileNames.Any())
+        {
+            _logger.Information("Processing completed. All files have been successfully extracted");
+            return;
+        }
+        _logger.Warning("Processing completed. Missing files detected");
+        foreach (var fileName in extractedFileNames)
+            _logger.Warning("File {FileName} was not found in the supplied archive(s)", fileName);
     }
 
     private static bool ContainsEntry(ZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
