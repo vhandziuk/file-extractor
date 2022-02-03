@@ -2,7 +2,7 @@ namespace FileExtractor;
 
 internal interface ICommandLineOptions
 {
-    string Configuration { get; set; }
-    string Source { get; set; }
-    string Destination { get; set; }
+    string Configuration { get; }
+    string Source { get; }
+    string Destination { get; }
 }
