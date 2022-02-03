@@ -33,25 +33,34 @@ internal sealed class App : IApp
         var destinationPath = options.Destination ?? sourcePath;
         var configurationPath = options.Configuration ?? Path.Combine(sourcePath, "configuration.csv");
 
-        var archives = _fileSystemUtils
-            .GetFiles(sourcePath)
-            .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
-
-        if (!archives.Any())
+        try
         {
-            _logger.Warning("Source directory contains no .zip files. The program will now exit");
-            return;
+            var archives = _fileSystemUtils
+                .GetFiles(sourcePath)
+                .Where(x => x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+
+            if (!archives.Any())
+            {
+                _logger.Warning("Source directory contains no .zip files. The program will now exit");
+                return;
+            }
+
+            var fileData = _fileInfoProvider
+                .EnumerateEntries(configurationPath);
+
+            if (!fileData.Any())
+            {
+                _logger.Warning("Supplied configuration contains files to extract. The program will now exit");
+                return;
+            }
+
+            _logger.Information("Starting file extraction");
+            await _zipFileExtractor.ExtractFiles(archives, destinationPath, fileData);
+            _logger.Information("File exctaction completed");
         }
-
-        var fileData = _fileInfoProvider
-            .EnumerateEntries(configurationPath);
-
-        if (!fileData.Any())
+        catch (Exception ex)
         {
-            _logger.Warning("Supplied configuration contains files to extract. The program will now exit");
-            return;
+            _logger.Error(ex, "An exception occurred. The program will now exit");
         }
-
-        await _zipFileExtractor.ExtractFiles(archives, destinationPath, fileData);
     }
 }

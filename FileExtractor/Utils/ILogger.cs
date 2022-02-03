@@ -8,6 +8,6 @@ namespace FileExtractor.Utils
         void Warning(string messageTemplate);
         void Warning(string messageTemplate, params object[] propertyValues);
 
-        void Error(string messageTemplate);
+        void Error(Exception exception, string messageTemplate, params object[] propertyValues);
     }
 }

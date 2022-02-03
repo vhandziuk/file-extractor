@@ -10,6 +10,14 @@ internal sealed class CsvFileInfoProvider : ICsvFileInfoProvider
             while (reader.ReadLine() is string line)
             {
                 var data = line.Split(',');
+                if (data.Length != 2)
+                {
+                    throw new Exception(
+                        "Malformed configuration file. " +
+                        "Data must contain 2 columns containing file name " +
+                        "and [optionally] subfolder path or an empty space separated by a comma");
+                }
+
                 yield return new FileInfoData(data[0], data[1]);
             }
         }
