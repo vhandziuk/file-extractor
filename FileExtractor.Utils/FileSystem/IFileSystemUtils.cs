@@ -1,6 +1,6 @@
-namespace FileExtractor.Utils;
+namespace FileExtractor.Utils.FileSystem;
 
-internal interface IFileSystemUtils
+public interface IFileSystemUtils
 {
     bool DirectoryExists(string path);
     DirectoryInfo CreateDirectory(string path);

@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\FileExtractor.Data\FileExtractor.Data.csproj" />
     <ProjectReference Include="..\FileExtractor.Common\FileExtractor.Common.csproj" />
+    <ProjectReference Include="..\FileExtractor.Utils\FileExtractor.Utils.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,8 @@
 using System.IO.Compression;
 
-namespace FileExtractor.Utils;
+namespace FileExtractor.Utils.Compression;
 
-internal interface IZipFileUtils
+public interface IZipFileUtils
 {
     ZipArchive OpenRead(string archiveFileName);
 }

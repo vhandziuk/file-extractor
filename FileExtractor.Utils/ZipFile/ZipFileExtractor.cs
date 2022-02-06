@@ -1,11 +1,13 @@
 using FileExtractor.Common.Logging;
+using FileExtractor.Utils.FileSystem;
+using FileExtractor.Utils.Threading;
 
 using System.IO.Compression;
 using FileExtractor.Data;
 
-namespace FileExtractor.Utils;
+namespace FileExtractor.Utils.Compression;
 
-internal sealed class ZipFileExtractor : IZipFileExtractor
+public sealed class ZipFileExtractor : IZipFileExtractor
 {
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly IZipFileUtils _zipFileUtils;
@@ -86,7 +88,7 @@ internal sealed class ZipFileExtractor : IZipFileExtractor
         data.ContainsKey(entry.Name)
         && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
             ? true
-            : Path.GetDirectoryName(entry.FullName).EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase));
+            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase)) == true;
 
     private static string GetExtractedPath(string outputPath) =>
         outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)
