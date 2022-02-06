@@ -25,11 +25,9 @@ internal sealed class App : IApp
 
     public async ValueTask RunAsync(ICommandLineOptions options)
     {
-        var executablePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-            ?? Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
-            ?? Directory.GetCurrentDirectory();
+        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
-        var sourcePath = options.Source ?? executablePath;
+        var sourcePath = options.Source ?? baseDirectory;
         var destinationPath = options.Destination ?? sourcePath;
         var configurationPath = options.Configuration ?? Path.Combine(sourcePath, "configuration.csv");
 
