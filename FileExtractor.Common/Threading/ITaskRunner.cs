@@ -1,4 +1,4 @@
-namespace FileExtractor.Utils.Threading;
+namespace FileExtractor.Common.Threading;
 
 public interface ITaskRunner
 {

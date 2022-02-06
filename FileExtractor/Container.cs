@@ -1,10 +1,8 @@
 using FileExtractor.Common.Logging;
-using FileExtractor.Utils.FileSystem;
-using FileExtractor.Utils.Threading;
-using FileExtractor.Utils.Compression;
-
+using FileExtractor.Common.Threading;
 using FileExtractor.Data;
-using FileExtractor.Utils;
+using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.FileSystem;
 using StrongInject;
 
 namespace FileExtractor;

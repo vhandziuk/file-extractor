@@ -1,9 +1,8 @@
-using FileExtractor.Common.Logging;
-using FileExtractor.Utils.FileSystem;
-using FileExtractor.Utils.Threading;
-
 using System.IO.Compression;
+using FileExtractor.Common.Logging;
+using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.FileSystem;
 
 namespace FileExtractor.Utils.Compression;
 
