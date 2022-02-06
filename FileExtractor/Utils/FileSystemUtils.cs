@@ -1,3 +1,5 @@
+using FileExtractor.Common.Logging;
+
 namespace FileExtractor.Utils;
 
 internal sealed class FileSystemUtils : IFileSystemUtils

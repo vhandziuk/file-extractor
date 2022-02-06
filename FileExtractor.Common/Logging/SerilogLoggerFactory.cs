@@ -4,7 +4,7 @@ using Serilog.Core;
 
 using SpecialFolder = System.Environment.SpecialFolder;
 
-namespace FileExtractor.Utils;
+namespace FileExtractor.Common.Logging;
 
 internal static class SerilogLoggerFactory
 {

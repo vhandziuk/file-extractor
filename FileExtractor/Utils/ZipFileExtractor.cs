@@ -1,3 +1,5 @@
+using FileExtractor.Common.Logging;
+
 using System.IO.Compression;
 using FileExtractor.Data;
 

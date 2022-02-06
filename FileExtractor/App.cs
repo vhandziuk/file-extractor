@@ -1,3 +1,5 @@
+using FileExtractor.Common.Logging;
+
 using System.Reflection;
 using FileExtractor.Data;
 using FileExtractor.Utils;

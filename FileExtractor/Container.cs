@@ -1,3 +1,5 @@
+using FileExtractor.Common.Logging;
+
 using FileExtractor.Data;
 using FileExtractor.Utils;
 using StrongInject;
