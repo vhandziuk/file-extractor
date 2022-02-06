@@ -3,7 +3,7 @@ using FileExtractor.Data;
 using FileExtractor.Utils.Compression;
 using FileExtractor.Utils.FileSystem;
 
-namespace FileExtractor;
+namespace FileExtractor.Application;
 
 internal sealed class App : IApp
 {
