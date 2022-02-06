@@ -1,6 +1,6 @@
 namespace FileExtractor.Data;
 
-internal sealed class CsvFileInfoProvider : ICsvFileInfoProvider
+public sealed class CsvFileInfoProvider : ICsvFileInfoProvider
 {
     public IEnumerable<FileInfoData> EnumerateEntries(string filePath)
     {

@@ -1,6 +1,6 @@
 namespace FileExtractor.Data;
 
-internal interface ICsvFileInfoProvider
+public interface ICsvFileInfoProvider
 {
     IEnumerable<FileInfoData> EnumerateEntries(string filePath);
 }

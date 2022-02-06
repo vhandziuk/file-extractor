@@ -17,4 +17,8 @@
     <PackageReference Include="StrongInject" Version="1.4.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FileExtractor.Data\FileExtractor.Data.csproj" />
+  </ItemGroup>
+
 </Project>
