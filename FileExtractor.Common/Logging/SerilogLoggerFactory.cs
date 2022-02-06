@@ -1,6 +1,7 @@
 using System.Text;
 using Serilog;
 using Serilog.Core;
+using Serilog.Sinks.SystemConsole.Themes;
 
 using SpecialFolder = System.Environment.SpecialFolder;
 
@@ -20,8 +21,9 @@ internal static class SerilogLoggerFactory
             new LoggerConfiguration()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
-                .WriteTo.ColoredConsole(
-                    outputTemplate: ConsoleOutputTemplate)
+                .WriteTo.Console(
+                    outputTemplate: ConsoleOutputTemplate,
+                    theme: AnsiConsoleTheme.Literate)
                 .WriteTo.File(
                     path: _logFilePath,
                     outputTemplate: FileOutputTemplate,
