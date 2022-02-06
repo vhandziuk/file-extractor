@@ -9,10 +9,8 @@ namespace FileExtractor.Utils;
 internal static class SerilogLoggerFactory
 {
     private const string EventTimingAndLevel = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}]";
-    private const string EventDetails = "{Message:lj}{NewLine}{Exception}";
-
-    private const string ConsoleOutputTemplate = $"{EventTimingAndLevel} {EventDetails}";
-    private const string FileOutputTemplate = $"{EventTimingAndLevel} [{{ProcessId}}] [{{ThreadId}}] [{{SourceContext}}] {EventDetails}";
+    private const string ConsoleOutputTemplate = $"{EventTimingAndLevel} {{Message:lj}}{{NewLine}}";
+    private const string FileOutputTemplate = $"{EventTimingAndLevel} [{{ProcessId}}] [{{ThreadId}}] [{{SourceContext}}] {{Message:lj}}{{NewLine}}{{Exception}}";
 
     private static readonly string _logFilePath = Path.Combine(
         Environment.GetFolderPath(SpecialFolder.CommonApplicationData), "FileExtractor", "Application.log");
