@@ -1,4 +1,4 @@
-namespace FileExtractor;
+namespace FileExtractor.Application;
 
 internal interface ICommandLineOptions
 {

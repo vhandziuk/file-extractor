@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace FileExtractor;
+namespace FileExtractor.Application;
 
 internal sealed class CommandLineOptions : ICommandLineOptions
 {

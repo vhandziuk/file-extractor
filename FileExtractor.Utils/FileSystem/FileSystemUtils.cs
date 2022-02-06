@@ -1,6 +1,8 @@
-namespace FileExtractor.Utils;
+using FileExtractor.Common.Logging;
 
-internal sealed class FileSystemUtils : IFileSystemUtils
+namespace FileExtractor.Utils.FileSystem;
+
+public sealed class FileSystemUtils : IFileSystemUtils
 {
     private readonly ILogger<FileSystemUtils> _logger;
 

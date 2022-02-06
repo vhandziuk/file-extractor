@@ -1,5 +1,6 @@
 ﻿using CommandLine;
-using FileExtractor;
+using FileExtractor.Application;
+using FileExtractor.DiRegistration;
 
 await Parser.Default
     .ParseArguments<CommandLineOptions>(args)

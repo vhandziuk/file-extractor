@@ -1,8 +1,8 @@
 using FileExtractor.Data;
 
-namespace FileExtractor.Utils;
+namespace FileExtractor.Utils.Compression;
 
-internal interface IZipFileExtractor
+public interface IZipFileExtractor
 {
     Task ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData);
 }

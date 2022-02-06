@@ -1,8 +1,9 @@
-using System.Reflection;
+using FileExtractor.Common.Logging;
 using FileExtractor.Data;
-using FileExtractor.Utils;
+using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.FileSystem;
 
-namespace FileExtractor;
+namespace FileExtractor.Application;
 
 internal sealed class App : IApp
 {

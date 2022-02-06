@@ -1,8 +1,8 @@
 using Serilog;
 
-namespace FileExtractor.Utils;
+namespace FileExtractor.Common.Logging;
 
-internal sealed class SerilogLogger<T> : ILogger<T>
+public sealed class SerilogLogger<T> : ILogger<T>
 {
     private readonly Lazy<ILogger> _logger = new Lazy<ILogger>(() => SerilogLoggerFactory.Create<T>());
     private ILogger Logger => _logger.Value;

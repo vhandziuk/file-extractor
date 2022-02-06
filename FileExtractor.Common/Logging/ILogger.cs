@@ -1,6 +1,6 @@
-namespace FileExtractor.Utils;
+namespace FileExtractor.Common.Logging;
 
-internal interface ILogger<T>
+public interface ILogger<T>
 {
     void Information(string messageTemplate);
     void Information(string messageTemplate, params object[] propertyValues);
