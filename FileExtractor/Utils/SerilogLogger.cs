@@ -4,17 +4,7 @@ namespace FileExtractor.Utils;
 
 internal sealed class SerilogLogger<T> : ILogger<T>
 {
-    private static readonly string _outputTemplate =
-        "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] [{ProcessId}] [{ThreadId}] [{ClassName}] {Message:lj}{NewLine}{Exception}";
-
-    private readonly Lazy<ILogger> _logger =
-        new Lazy<ILogger>(() => new LoggerConfiguration()
-            .Enrich.WithProcessId()
-            .Enrich.WithThreadId()
-            .Enrich.WithProperty("ClassName", typeof(T).Name)
-            .WriteTo.ColoredConsole(outputTemplate: _outputTemplate)
-            .CreateLogger());
-
+    private readonly Lazy<ILogger> _logger = new Lazy<ILogger>(() => SerilogLoggerFactory.Create<T>());
     private ILogger Logger => _logger.Value;
 
     public void Information(string messageTemplate) => Logger.Information(messageTemplate);
