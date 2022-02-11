@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Utils", "File
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Utils.UnitTest", "FileExtractor.Utils.UnitTest\FileExtractor.Utils.UnitTest.csproj", "{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.UnitTest", "FileExtractor.UnitTest\FileExtractor.UnitTest.csproj", "{CE2F12CA-C67C-4348-853B-E522C5A80A6C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
