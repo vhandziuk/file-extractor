@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
@@ -30,7 +29,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         await _taskRunner.Run(
             () =>
             {
-                var zipArchives = Enumerable.Empty<ZipArchive>();
+                var zipArchives = Enumerable.Empty<IZipArchive>();
                 try
                 {
                     zipArchives = archives.Select(_zipFileUtils.OpenRead);
@@ -45,10 +44,10 @@ public sealed class ZipFileExtractor : IZipFileExtractor
             });
     }
 
-    private static IEnumerable<ZipArchiveEntry> GetEntries(IEnumerable<ZipArchive> zipArchives) =>
+    private static IEnumerable<IZipArchiveEntry> GetEntries(IEnumerable<IZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private void ExtractInternal(IEnumerable<ZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
+    private void ExtractInternal(IEnumerable<IZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (zipEntries?.Any() != true)
         {
@@ -83,7 +82,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
             _logger.Warning("File {FileName} was not found in the supplied archive(s)", fileName);
     }
 
-    private static bool ContainsEntry(ZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
+    private static bool ContainsEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
         data.ContainsKey(entry.Name)
         && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
             ? true

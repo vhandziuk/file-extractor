@@ -1,8 +1,13 @@
-using System.IO.Compression;
-
 namespace FileExtractor.Utils.Compression;
 
 public sealed class ZipFileUtils : IZipFileUtils
 {
-    public ZipArchive OpenRead(string archiveFileName) => ZipFile.OpenRead(archiveFileName);
+    private readonly IZipFile _zipFile;
+
+    public ZipFileUtils(IZipFile zipFile)
+    {
+        _zipFile = zipFile;
+    }
+
+    public IZipArchive OpenRead(string archiveFileName) => _zipFile.OpenRead(archiveFileName);
 }

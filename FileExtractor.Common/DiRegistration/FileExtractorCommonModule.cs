@@ -2,10 +2,10 @@ using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using StrongInject;
 
-namespace FileExtractor.DiRegistration;
+namespace FileExtractor.Common.DiRegistration;
 
 [Register(typeof(SerilogLogger<>), Scope.SingleInstance, typeof(ILogger<>))]
 [Register(typeof(TaskRunner), Scope.SingleInstance, typeof(ITaskRunner))]
-internal sealed class FileExtractorCommonModule
+public sealed class FileExtractorCommonModule
 {
 }

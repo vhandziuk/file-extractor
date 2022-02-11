@@ -1,9 +1,8 @@
-using FileExtractor.Data;
 using StrongInject;
 
-namespace FileExtractor.DiRegistration;
+namespace FileExtractor.Data.DiRegistration;
 
 [Register(typeof(CsvFileInfoProvider), Scope.SingleInstance, typeof(ICsvFileInfoProvider))]
-internal sealed class FileExtractorDataModule
+public sealed class FileExtractorDataModule
 {
 }
