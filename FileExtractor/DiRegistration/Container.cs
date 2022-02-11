@@ -1,5 +1,6 @@
 using FileExtractor.Application;
-using FileExtractor.DiRegistration.Modules;
+using FileExtractor.Common.DiRegistration;
+using FileExtractor.Data.DiRegistration;
 using FileExtractor.Utils.DiRegistration;
 using StrongInject;
 
