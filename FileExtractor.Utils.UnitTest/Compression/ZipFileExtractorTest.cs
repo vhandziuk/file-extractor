@@ -111,7 +111,7 @@ public class ZipFileExtractorTest
         _loggerMock.Verify(logger =>
             logger.Information("Processing files"), Times.Once);
         _loggerMock.Verify(logger =>
-            logger.Information(It.Is<string>(message => message.StartsWith("Extracting zipped file")), It.IsAny<string>(), SomeExtractedPath), Times.Exactly(2));
+            logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), SomeExtractedPath), Times.Exactly(2));
         _loggerMock.Verify(logger =>
             logger.Information("Processing completed. All files have been successfully extracted"), Times.Once);
         _loggerMock.Verify(logger =>
