@@ -64,7 +64,9 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         _logger.Information("Processing files");
 
         var extractedFileNames = new SortedSet<string>();
-        foreach (var zipEntry in zipEntries.Where(entry => ContainsEntry(entry, data)))
+        foreach (var zipEntry in zipEntries
+            .Where(entry => ContainsEntry(entry, data))
+            .AsParallel())
         {
             _logger.Information("Extracting zipped file {File} to {Path}", zipEntry.Name, extractedPath);
             zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
