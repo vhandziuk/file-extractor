@@ -68,7 +68,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
             .Where(entry => ContainsEntry(entry, data))
             .AsParallel())
         {
-            _logger.Information("Extracting zipped file {File} to {Path}", zipEntry.Name, extractedPath);
+            _logger.Information("Extracting {File} to {Path}", zipEntry.Name, extractedPath);
             zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
             extractedFileNames.Add(zipEntry.Name);
         }
