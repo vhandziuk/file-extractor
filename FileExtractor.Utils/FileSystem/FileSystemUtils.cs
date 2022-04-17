@@ -26,11 +26,11 @@ public sealed class FileSystemUtils : IFileSystemUtils
 
     public bool DirectoryExists(string path) => Directory.Exists(path);
 
-    public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
+    public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
     {
         try
         {
-            return Directory.EnumerateFiles(path, searchPattern, searchOption);
+            return Directory.GetFiles(path, searchPattern, searchOption);
         }
         catch (Exception ex)
         {

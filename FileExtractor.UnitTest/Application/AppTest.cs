@@ -117,7 +117,7 @@ public class AppTest
 
     private void LetGetFilesReturn(string path, params string[] fileNames) =>
         _fileSystemUtilsMock
-            .Setup(utils => utils.EnumerateFiles(path, "*.zip", SearchOption.AllDirectories))
+            .Setup(utils => utils.GetFiles(path, "*.zip", SearchOption.AllDirectories))
             .Returns(fileNames);
 
     private void LetEnumerateEntriesReturn(string path, params FileInfoData[] entries) =>
