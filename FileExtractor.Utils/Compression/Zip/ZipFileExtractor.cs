@@ -4,7 +4,7 @@ using FileExtractor.Common.Threading;
 using FileExtractor.Data;
 using FileExtractor.Utils.FileSystem;
 
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Zip;
 
 public sealed class ZipFileExtractor : IZipFileExtractor
 {

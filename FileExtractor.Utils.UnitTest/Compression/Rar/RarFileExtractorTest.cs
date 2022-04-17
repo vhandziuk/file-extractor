@@ -4,35 +4,35 @@ using System.Threading.Tasks;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
-using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.Compression.Rar;
 using FileExtractor.Utils.FileSystem;
 using Moq;
 using Xunit;
 
-namespace FileExtractor.Utils.UnitTest.Compression;
+namespace FileExtractor.Utils.UnitTest.Compression.Rar;
 
-public class ZipFileExtractorTest
+public class RarFileExtractorTest
 {
     private const string SomeExtractedPath = @"C:\Extracted";
-    private const string SomeArchiveFileName1 = @"C:\SomeArchive1.zip";
-    private const string SomeArchiveFileName2 = @"C:\SomeArchive2.zip";
+    private const string SomeArchiveFileName1 = @"C:\SomeArchive1.rar";
+    private const string SomeArchiveFileName2 = @"C:\SomeArchive2.rar";
 
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
-    private readonly Mock<IZipFileUtils> _zipFileUtilsMock = new();
+    private readonly Mock<IRarFileUtils> _rarFileUtilsMock = new();
     private readonly Mock<ITaskRunner> _taskRunnerMock = new();
-    private readonly Mock<ILogger<ZipFileExtractor>> _loggerMock = new();
+    private readonly Mock<ILogger<RarFileExtractor>> _loggerMock = new();
 
-    private readonly ZipFileExtractor _sut;
+    private readonly RarFileExtractor _sut;
 
-    public ZipFileExtractorTest()
+    public RarFileExtractorTest()
     {
         _taskRunnerMock
             .Setup(runner => runner.Run(It.IsAny<Action>()))
             .Callback<Action>(action => action());
 
-        _sut = new ZipFileExtractor(
+        _sut = new RarFileExtractor(
             _fileSystemUtilsMock.Object,
-            _zipFileUtilsMock.Object,
+            _rarFileUtilsMock.Object,
             _taskRunnerMock.Object,
             _loggerMock.Object);
     }
@@ -40,7 +40,7 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IZipArchiveEntry>());
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IRarArchiveEntry>());
 
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName1 },
@@ -53,9 +53,9 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ExtractedPathsDoNotExist_CreatesExtractedPaths()
     {
-        var zipArchiveEntry = GetMockedZipArchiveEntry(
+        var rarArchiveEntry = GetMockedRarArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry);
         LetDirectoryNotExist(SomeExtractedPath);
         LetDirectoryNotExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -76,9 +76,9 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ExtractedPathExists_DoesNotCreateExtractedPaths()
     {
-        var zipArchiveEntry = GetMockedZipArchiveEntry(
+        var rarArchiveEntry = GetMockedRarArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry);
         LetDirectoryExist(SomeExtractedPath);
         LetDirectoryExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -97,14 +97,14 @@ public class ZipFileExtractorTest
     }
 
     [Fact]
-    public async Task ExtractFiles_ZipArchivesContainMatchingEntries_ExtractsEntries()
+    public async Task ExtractFiles_RarArchivesContainMatchingEntries_ExtractsEntries()
     {
-        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
-        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -131,21 +131,21 @@ public class ZipFileExtractorTest
             logger.Warning(It.IsAny<string>()), Times.Never);
         _loggerMock.Verify(logger =>
             logger.Warning(It.IsAny<string>(), It.IsAny<object[]>()), Times.Never);
-        zipArchiveEntry1Mock.Verify(entry =>
+        rarArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Once);
-        zipArchiveEntry2Mock.Verify(entry =>
+        rarArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Once);
     }
 
     [Fact]
-    public async Task ExtractFiles_ZipArchivesDoNotContainMatchingEntries_DoesNotExtractEntries()
+    public async Task ExtractFiles_RarArchivesDoNotContainMatchingEntries_DoesNotExtractEntries()
     {
-        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
-        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -166,21 +166,21 @@ public class ZipFileExtractorTest
             logger.Warning("Processing completed. Missing files detected"), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Warning(It.Is<string>(message => message.EndsWith("was not found in the supplied archive(s)")), It.IsAny<object[]>()), Times.Exactly(2));
-        zipArchiveEntry1Mock.Verify(entry =>
+        rarArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
-        zipArchiveEntry2Mock.Verify(entry =>
+        rarArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
     }
 
     [Fact]
-    public async Task ExtractFiles_ZipArchivesContainNoMatchingEntriesByFileName_DoesNotExtractEntries()
+    public async Task ExtractFiles_RarArchivesContainNoMatchingEntriesByFileName_DoesNotExtractEntries()
     {
-        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
             "SomeOtherName1.dat", @"SomeDirectory\SomeOtherName1.dat");
-        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
             "SomeOtherName2.dat", @"SomeDirectory\SomeOtherName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -195,21 +195,21 @@ public class ZipFileExtractorTest
                 new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
             });
 
-        zipArchiveEntry1Mock.Verify(entry =>
+        rarArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
-        zipArchiveEntry2Mock.Verify(entry =>
+        rarArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
     [Fact]
-    public async Task ExtractFiles_ZipArchivesContainNoMatchingEntriesByParentDirectory_DoesNotExtractEntries()
+    public async Task ExtractFiles_RarArchivesContainNoMatchingEntriesByParentDirectory_DoesNotExtractEntries()
     {
-        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
             "SomeName1.dat", @"SomeOtherDirectory\SomeName1.dat");
-        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
             "SomeName2.dat", @"SomeOtherDirectory\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
+        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -224,25 +224,25 @@ public class ZipFileExtractorTest
                 new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
             });
 
-        zipArchiveEntry1Mock.Verify(entry =>
+        rarArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
-        zipArchiveEntry2Mock.Verify(entry =>
+        rarArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
-    private Mock<IZipArchiveEntry> GetMockedZipArchiveEntry(string name, string fullName)
+    private Mock<IRarArchiveEntry> GetMockedRarArchiveEntry(string name, string fullName)
     {
-        var mock = new Mock<IZipArchiveEntry>();
+        var mock = new Mock<IRarArchiveEntry>();
         mock.SetupGet(entry => entry.Name).Returns(name);
         mock.SetupGet(entry => entry.FullName).Returns(fullName);
 
         return mock;
     }
 
-    private void LetZipArchiveEntriesBe(string archiveFileName, params IZipArchiveEntry[] entries) =>
-        _zipFileUtilsMock
+    private void LetRarArchiveEntriesBe(string archiveFileName, params IRarArchiveEntry[] entries) =>
+        _rarFileUtilsMock
             .Setup(utils => utils.OpenRead(archiveFileName))
-            .Returns(Mock.Of<IZipArchive>(archive => archive.Entries == entries));
+            .Returns(Mock.Of<IRarArchive>(archive => archive.Entries == entries));
 
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock

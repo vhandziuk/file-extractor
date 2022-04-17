@@ -1,10 +1,11 @@
 using SharpCompress.Archives.Rar;
 
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Rar;
 
 internal sealed class RarArchiveWrapper : IRarArchive
 {
     private readonly RarArchive _rarArchive;
+
     public RarArchiveWrapper(RarArchive rarArchive) =>
         _rarArchive = rarArchive;
 

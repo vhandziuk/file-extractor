@@ -2,7 +2,7 @@ using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
 
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Rar;
 
 internal sealed class RarArchiveEntryWrapper : IRarArchiveEntry
 {

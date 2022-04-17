@@ -1,8 +1,8 @@
-using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.Compression.Zip;
 using Moq;
 using Xunit;
 
-namespace FileExtractor.Utils.UnitTest.Compression;
+namespace FileExtractor.Utils.UnitTest.Compression.Zip;
 
 public class ZipFileUtilsTest
 {

@@ -1,4 +1,4 @@
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Rar;
 
 public interface IRarArchive : IDisposable
 {

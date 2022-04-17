@@ -1,4 +1,4 @@
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Zip;
 
 public interface IZipArchive : IDisposable
 {

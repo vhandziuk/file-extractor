@@ -1,6 +1,6 @@
 using System.IO.Compression;
 
-namespace FileExtractor.Utils.Compression;
+namespace FileExtractor.Utils.Compression.Zip;
 
 internal sealed class ZipArchiveWrapper : IZipArchive
 {
