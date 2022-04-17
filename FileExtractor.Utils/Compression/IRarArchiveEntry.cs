@@ -1,6 +1,6 @@
 namespace FileExtractor.Utils.Compression;
 
-public interface IArchiveEntry
+public interface IRarArchiveEntry
 {
     string Name { get; }
     string FullName { get; }

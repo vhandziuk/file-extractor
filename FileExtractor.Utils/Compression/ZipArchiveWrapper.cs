@@ -6,10 +6,8 @@ internal sealed class ZipArchiveWrapper : IZipArchive
 {
     private readonly ZipArchive _zipArchive;
 
-    public ZipArchiveWrapper(ZipArchive zipArchive)
-    {
+    public ZipArchiveWrapper(ZipArchive zipArchive) =>
         _zipArchive = zipArchive;
-    }
 
     public IReadOnlyCollection<IZipArchiveEntry> Entries =>
         _zipArchive.Entries.Select(entry => new ZipArchiveEntryWrapper(entry)).ToArray();

@@ -6,10 +6,8 @@ internal sealed class ZipArchiveEntryWrapper : IZipArchiveEntry
 {
     private readonly ZipArchiveEntry _zipArchiveEntry;
 
-    public ZipArchiveEntryWrapper(ZipArchiveEntry zipArchiveEntry)
-    {
+    public ZipArchiveEntryWrapper(ZipArchiveEntry zipArchiveEntry) =>
         _zipArchiveEntry = zipArchiveEntry;
-    }
 
     public string Name => _zipArchiveEntry.Name;
 
