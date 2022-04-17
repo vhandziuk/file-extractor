@@ -40,7 +40,7 @@ public class AppTest
     [Fact]
     public async Task RunAsync_SourceDirectoryDoesNotContainZipFiles_DoesNotExtractFiles()
     {
-        LetGetFilesReturn(SomeSourcePath, "file1.txt", "file2.exe");
+        LetGetFilesReturn(SomeSourcePath, Array.Empty<string>());
 
         await _sut.RunAsync(_commandlineOptions);
 
@@ -67,7 +67,7 @@ public class AppTest
     public async Task RunAsync_SourceDirectoryContainsZipFilesAndFileDataContainsEntries_ExtractsFiles()
     {
         var archives = new[] { "file1.zip", "file2.zip" };
-        var fileData = new[] { new FileInfoData("file1.zip", string.Empty) };
+        var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
@@ -102,7 +102,7 @@ public class AppTest
     {
         var expectedException = new Exception();
         var archives = new[] { "file1.zip", "file2.zip" };
-        var fileData = new[] { new FileInfoData("file1.zip", string.Empty) };
+        var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
         _zipFileExtractorMock
@@ -117,7 +117,7 @@ public class AppTest
 
     private void LetGetFilesReturn(string path, params string[] fileNames) =>
         _fileSystemUtilsMock
-            .Setup(utils => utils.GetFiles(path))
+            .Setup(utils => utils.EnumerateFiles(path, "*.zip", SearchOption.AllDirectories))
             .Returns(fileNames);
 
     private void LetEnumerateEntriesReturn(string path, params FileInfoData[] entries) =>

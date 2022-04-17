@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
@@ -55,7 +56,9 @@ public sealed class ZipFileExtractor : IZipFileExtractor
             return;
         }
 
-        var data = fileData.ToDictionary(entry => entry.Name);
+        var data = fileData
+            .GroupBy(entry => entry.Directory)
+            .ToDictionary(group => group.Key, group => group.ToDictionary(entry => entry.Name));
 
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
@@ -63,32 +66,45 @@ public sealed class ZipFileExtractor : IZipFileExtractor
 
         _logger.Information("Processing files");
 
-        var extractedFileNames = new SortedSet<string>();
-        foreach (var zipEntry in zipEntries
-            .Where(entry => ContainsEntry(entry, data))
-            .AsParallel())
+        var extractedFiles = new ConcurrentBag<FileInfoData>();
+        foreach (var pair in data.AsParallel())
         {
-            _logger.Information("Extracting {File} to {Path}", zipEntry.Name, extractedPath);
-            zipEntry.ExtractToFile(Path.Combine(extractedPath, zipEntry.Name), overwrite: true);
-            extractedFileNames.Add(zipEntry.Name);
+            var destinationPath = Path.Combine(extractedPath, pair.Key);
+            if (!_fileSystemUtils.DirectoryExists(destinationPath))
+                _fileSystemUtils.CreateDirectory(destinationPath);
+
+            foreach (var zipEntry in zipEntries.AsParallel())
+            {
+                if (!TryGetMatchingEntry(zipEntry, pair.Value, out var fileInfo))
+                    continue;
+
+                _logger.Information("Extracting {File} to {Path}", fileInfo.Name, destinationPath);
+                zipEntry.ExtractToFile(Path.Combine(destinationPath, fileInfo.Name), overwrite: true);
+                extractedFiles.Add(fileInfo);
+            }
         }
 
-        extractedFileNames.SymmetricExceptWith(data.Keys);
-        if (!extractedFileNames.Any())
+        var sortedFileData = fileData
+            .OrderBy(fileInfo => fileInfo.Directory)
+            .ThenBy(fileInfo => fileInfo.Name)
+            .ToHashSet();
+
+        sortedFileData.SymmetricExceptWith(extractedFiles);
+        if (!sortedFileData.Any())
         {
             _logger.Information("Processing completed. All files have been successfully extracted");
             return;
         }
         _logger.Warning("Processing completed. Missing files detected");
-        foreach (var fileName in extractedFileNames)
-            _logger.Warning("File {FileName} was not found in the supplied archive(s)", fileName);
+        foreach (var file in sortedFileData)
+            _logger.Warning("File {File} was not found in the supplied archive(s)", Path.Combine(file.Location, file.Name));
     }
 
-    private static bool ContainsEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
-        data.ContainsKey(entry.Name)
-        && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
+    private static bool TryGetMatchingEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
+        data.TryGetValue(entry.Name, out fileInfo)
+        && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true
-            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase)) == true;
+            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].Location, StringComparison.OrdinalIgnoreCase)) == true;
 
     private static string GetExtractedPath(string outputPath) =>
         outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)

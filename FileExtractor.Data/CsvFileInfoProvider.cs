@@ -18,7 +18,16 @@ public sealed class CsvFileInfoProvider : ICsvFileInfoProvider
                         "and [optionally] subfolder path or an empty space separated by a comma");
                 }
 
-                yield return new FileInfoData(data[0], data[1]);
+                var directory = Path.GetDirectoryName(data[0]) ?? string.Empty;
+                var name = Path.GetFileName(data[0]);
+                var location = data[1];
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    throw new Exception("File name cannot be empty or whitespace");
+                }
+
+                yield return new FileInfoData(directory, name, location);
             }
         }
     }

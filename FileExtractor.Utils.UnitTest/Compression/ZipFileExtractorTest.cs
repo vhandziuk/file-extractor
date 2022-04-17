@@ -14,8 +14,8 @@ namespace FileExtractor.Utils.UnitTest.Compression;
 public class ZipFileExtractorTest
 {
     private const string SomeExtractedPath = @"C:\Extracted";
-    private const string SomeArchiveFileName = @"C:\SomeArchive.zip";
-    private const string AnotherArchiveFileName = @"C:\AnotherArchive.zip";
+    private const string SomeArchiveFileName1 = @"C:\SomeArchive1.zip";
+    private const string SomeArchiveFileName2 = @"C:\SomeArchive2.zip";
 
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<IZipFileUtils> _zipFileUtilsMock = new();
@@ -40,111 +40,124 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetZipArchiveEntriesBe(SomeArchiveFileName, Array.Empty<IZipArchiveEntry>());
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IZipArchiveEntry>());
 
         await _sut.ExtractFiles(
-            new[] { SomeArchiveFileName },
+            new[] { SomeArchiveFileName1 },
             SomeExtractedPath,
             Array.Empty<FileInfoData>());
 
-        _loggerMock.Verify(logger =>
-            logger.Warning("The supplied archive(s) contain no entries"), Times.Once);
+        _loggerMock.Verify(logger => logger.Warning("The supplied archive(s) contain no entries"), Times.Once);
     }
 
     [Fact]
-    public async Task ExtractFiles_ExtractedPathDoesNotExist_CreatesExtractedPath()
+    public async Task ExtractFiles_ExtractedPathsDoNotExist_CreatesExtractedPaths()
     {
         var zipArchiveEntry = GetMockedZipArchiveEntry(
-            "SomeName.dat", @"SomeDirectory\SomeName.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName, zipArchiveEntry);
+            "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry);
         LetDirectoryNotExist(SomeExtractedPath);
+        LetDirectoryNotExist(Path.Combine(SomeExtractedPath, "Test"));
 
         await _sut.ExtractFiles(
-            new[] { SomeArchiveFileName },
+            new[] { SomeArchiveFileName1 },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[]
+            {
+                new FileInfoData("Test", "SomeName1.dat", "SomeDirectory")
+            });
 
         _fileSystemUtilsMock.Verify(utils =>
             utils.CreateDirectory(SomeExtractedPath), Times.Once);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.CreateDirectory(Path.Combine(SomeExtractedPath, "Test")), Times.Once);
     }
 
     [Fact]
-    public async Task ExtractFiles_ExtractedPathExists_DoesNotCreateExtractedPath()
+    public async Task ExtractFiles_ExtractedPathExists_DoesNotCreateExtractedPaths()
     {
         var zipArchiveEntry = GetMockedZipArchiveEntry(
-            "SomeName.dat", @"SomeDirectory\SomeName.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName, zipArchiveEntry);
+            "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry);
         LetDirectoryExist(SomeExtractedPath);
+        LetDirectoryExist(Path.Combine(SomeExtractedPath, "Test"));
 
         await _sut.ExtractFiles(
-            new[] { SomeArchiveFileName },
+            new[] { SomeArchiveFileName1 },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[]
+            {
+                new FileInfoData("Test", "SomeName1.dat", "SomeDirectory")
+            });
 
         _fileSystemUtilsMock.Verify(utils =>
             utils.CreateDirectory(SomeExtractedPath), Times.Never);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.CreateDirectory(Path.Combine(SomeExtractedPath, "Test")), Times.Never);
     }
 
     [Fact]
     public async Task ExtractFiles_ZipArchivesContainMatchingEntries_ExtractsEntries()
     {
-        var _zipEntryMock = GetMockedZipArchiveEntry(
-            "SomeName.dat", @"SomeDirectory\SomeName.dat");
-        var _anotherZipEntryMock = GetMockedZipArchiveEntry(
-            "AnotherName.dat", @"AnotherDirectory\AnotherName.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName, _zipEntryMock.Object);
-        LetZipArchiveEntriesBe(AnotherArchiveFileName, _anotherZipEntryMock.Object);
+        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+            "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
+        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+            "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
+        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
             {
-                SomeArchiveFileName,
-                AnotherArchiveFileName
+                SomeArchiveFileName1,
+                SomeArchiveFileName2
             },
             SomeExtractedPath,
             new[]
             {
-                new FileInfoData("SomeName.dat", "SomeDirectory"),
-                new FileInfoData("AnotherName.dat", "AnotherDirectory")
+                new FileInfoData("", "SomeName1.dat", "SomeDirectory1"),
+                new FileInfoData("Test", "SomeName2.dat", "SomeDirectory2")
             });
 
         _loggerMock.Verify(logger =>
             logger.Information("Processing files"), Times.Once);
         _loggerMock.Verify(logger =>
-            logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), SomeExtractedPath), Times.Exactly(2));
+            logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), SomeExtractedPath), Times.Once);
+        _loggerMock.Verify(logger =>
+            logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), Path.Combine(SomeExtractedPath, "Test")), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Information("Processing completed. All files have been successfully extracted"), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Warning(It.IsAny<string>()), Times.Never);
         _loggerMock.Verify(logger =>
             logger.Warning(It.IsAny<string>(), It.IsAny<object[]>()), Times.Never);
-        _zipEntryMock.Verify(entry =>
-            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Once);
-        _anotherZipEntryMock.Verify(entry =>
-            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "AnotherName.dat"), true), Times.Once);
+        zipArchiveEntry1Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Once);
+        zipArchiveEntry2Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Once);
     }
 
     [Fact]
     public async Task ExtractFiles_ZipArchivesDoNotContainMatchingEntries_DoesNotExtractEntries()
     {
-        var _zipEntryMock = GetMockedZipArchiveEntry(
-            "SomeName.dat", @"SomeDirectory\SomeName.dat");
-        var _anotherZipEntryMock = GetMockedZipArchiveEntry(
-            "AnotherName.dat", @"AnotherDirectory\AnotherName.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName, _zipEntryMock.Object);
-        LetZipArchiveEntriesBe(AnotherArchiveFileName, _anotherZipEntryMock.Object);
+        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+            "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
+        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+            "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
+        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
             {
-                SomeArchiveFileName,
-                AnotherArchiveFileName
+                SomeArchiveFileName1,
+                SomeArchiveFileName2
             },
             SomeExtractedPath,
             new[]
             {
-                new FileInfoData("NonMatchingName.dat", "SomeDirectory"),
-                new FileInfoData("AnotherNonMatchingName.dat", "AnotherDirectory")
+                new FileInfoData("", "NonMatchingName1.dat", "SomeDirectory1"),
+                new FileInfoData("Test", "NonMatchingName2.dat", "SomeDirectory2")
             });
 
         _loggerMock.Verify(logger =>
@@ -153,42 +166,68 @@ public class ZipFileExtractorTest
             logger.Warning("Processing completed. Missing files detected"), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Warning(It.Is<string>(message => message.EndsWith("was not found in the supplied archive(s)")), It.IsAny<object[]>()), Times.Exactly(2));
-        _zipEntryMock.Verify(entry =>
+        zipArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
-        _anotherZipEntryMock.Verify(entry =>
+        zipArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
     }
 
     [Fact]
     public async Task ExtractFiles_ZipArchivesContainNoMatchingEntriesByFileName_DoesNotExtractEntries()
     {
-        var _zipEntryMock = GetMockedZipArchiveEntry(
-            "SomeOtherName.dat", @"SomeDirectory\SomeOtherName.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName, _zipEntryMock.Object);
+        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+            "SomeOtherName1.dat", @"SomeDirectory\SomeOtherName1.dat");
+        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+            "SomeOtherName2.dat", @"SomeDirectory\SomeOtherName2.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
+        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
-            new[] { SomeArchiveFileName },
+            new[]
+            {
+                SomeArchiveFileName1,
+                SomeArchiveFileName2
+            },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[]
+            {
+                new FileInfoData("", "SomeName1.dat", "SomeDirectory"),
+                new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
+            });
 
-        _zipEntryMock.Verify(entry =>
-            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Never);
+        zipArchiveEntry1Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
+        zipArchiveEntry2Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
     [Fact]
     public async Task ExtractFiles_ZipArchivesContainNoMatchingEntriesByParentDirectory_DoesNotExtractEntries()
     {
-        var _zipEntryMock = GetMockedZipArchiveEntry(
-            "SomeName.dat", @"SomeOtherDirectory\SomeName.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName, _zipEntryMock.Object);
+        var zipArchiveEntry1Mock = GetMockedZipArchiveEntry(
+            "SomeName1.dat", @"SomeOtherDirectory\SomeName1.dat");
+        var zipArchiveEntry2Mock = GetMockedZipArchiveEntry(
+            "SomeName2.dat", @"SomeOtherDirectory\SomeName2.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, zipArchiveEntry1Mock.Object);
+        LetZipArchiveEntriesBe(SomeArchiveFileName2, zipArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
-            new[] { SomeArchiveFileName },
+            new[]
+            {
+                SomeArchiveFileName1,
+                SomeArchiveFileName2
+            },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[]
+            {
+                new FileInfoData("", "SomeName1.dat", "SomeDirectory"),
+                new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
+            });
 
-        _zipEntryMock.Verify(entry =>
-            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Never);
+        zipArchiveEntry1Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
+        zipArchiveEntry2Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
     private Mock<IZipArchiveEntry> GetMockedZipArchiveEntry(string name, string fullName)
