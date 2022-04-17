@@ -35,7 +35,7 @@ internal sealed class App : IApp
         try
         {
             var archives = _fileSystemUtils
-                .GetFiles(sourcePath, "*.zip", SearchOption.AllDirectories);
+                .EnumerateFiles(sourcePath, "*.zip", SearchOption.AllDirectories);
 
             if (!archives.Any())
             {
