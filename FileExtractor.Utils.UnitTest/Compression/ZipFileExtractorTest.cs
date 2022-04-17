@@ -62,7 +62,7 @@ public class ZipFileExtractorTest
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[] { new FileInfoData("", "SomeName.dat", "SomeDirectory") });
 
         _fileSystemUtilsMock.Verify(utils =>
             utils.CreateDirectory(SomeExtractedPath), Times.Once);
@@ -79,7 +79,7 @@ public class ZipFileExtractorTest
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[] { new FileInfoData("", "SomeName.dat", "SomeDirectory") });
 
         _fileSystemUtilsMock.Verify(utils =>
             utils.CreateDirectory(SomeExtractedPath), Times.Never);
@@ -104,8 +104,8 @@ public class ZipFileExtractorTest
             SomeExtractedPath,
             new[]
             {
-                new FileInfoData("SomeName.dat", "SomeDirectory"),
-                new FileInfoData("AnotherName.dat", "AnotherDirectory")
+                new FileInfoData("", "SomeName.dat", "SomeDirectory"),
+                new FileInfoData("", "AnotherName.dat", "AnotherDirectory")
             });
 
         _loggerMock.Verify(logger =>
@@ -143,8 +143,8 @@ public class ZipFileExtractorTest
             SomeExtractedPath,
             new[]
             {
-                new FileInfoData("NonMatchingName.dat", "SomeDirectory"),
-                new FileInfoData("AnotherNonMatchingName.dat", "AnotherDirectory")
+                new FileInfoData("", "NonMatchingName.dat", "SomeDirectory"),
+                new FileInfoData("", "AnotherNonMatchingName.dat", "AnotherDirectory")
             });
 
         _loggerMock.Verify(logger =>
@@ -169,7 +169,7 @@ public class ZipFileExtractorTest
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[] { new FileInfoData("", "SomeName.dat", "SomeDirectory") });
 
         _zipEntryMock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Never);
@@ -185,7 +185,7 @@ public class ZipFileExtractorTest
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName },
             SomeExtractedPath,
-            new[] { new FileInfoData("SomeName.dat", "SomeDirectory") });
+            new[] { new FileInfoData("", "SomeName.dat", "SomeDirectory") });
 
         _zipEntryMock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Never);

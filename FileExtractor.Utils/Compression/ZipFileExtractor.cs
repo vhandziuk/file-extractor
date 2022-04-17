@@ -86,9 +86,9 @@ public sealed class ZipFileExtractor : IZipFileExtractor
 
     private static bool ContainsEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data) =>
         data.ContainsKey(entry.Name)
-        && (string.IsNullOrEmpty(data[entry.Name].DirectoryName)
+        && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true
-            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].DirectoryName, StringComparison.OrdinalIgnoreCase)) == true;
+            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].Location, StringComparison.OrdinalIgnoreCase)) == true;
 
     private static string GetExtractedPath(string outputPath) =>
         outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)

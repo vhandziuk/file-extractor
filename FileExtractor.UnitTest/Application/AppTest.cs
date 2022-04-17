@@ -67,7 +67,7 @@ public class AppTest
     public async Task RunAsync_SourceDirectoryContainsZipFilesAndFileDataContainsEntries_ExtractsFiles()
     {
         var archives = new[] { "file1.zip", "file2.zip" };
-        var fileData = new[] { new FileInfoData("file1.zip", string.Empty) };
+        var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
@@ -102,7 +102,7 @@ public class AppTest
     {
         var expectedException = new Exception();
         var archives = new[] { "file1.zip", "file2.zip" };
-        var fileData = new[] { new FileInfoData("file1.zip", string.Empty) };
+        var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
         _zipFileExtractorMock
