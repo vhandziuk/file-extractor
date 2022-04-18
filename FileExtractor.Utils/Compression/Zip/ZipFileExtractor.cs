@@ -25,8 +25,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         _logger = logger;
     }
 
-    public async Task ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData)
-    {
+    public async Task<IEnumerable<FileInfoData>> ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData) =>
         await _taskRunner.Run(
             () =>
             {
@@ -35,7 +34,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
                 {
                     zipArchives = archives.Select(_zipFileUtils.OpenRead);
                     var zipEntries = GetEntries(zipArchives);
-                    ExtractInternal(zipEntries, outputPath, fileData);
+                    return ExtractInternal(zipEntries, outputPath, fileData);
                 }
                 finally
                 {
@@ -43,17 +42,16 @@ public sealed class ZipFileExtractor : IZipFileExtractor
                         archive.Dispose();
                 }
             });
-    }
 
     private static IEnumerable<IZipArchiveEntry> GetEntries(IEnumerable<IZipArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private void ExtractInternal(IEnumerable<IZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
+    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (zipEntries?.Any() != true)
         {
             _logger.Warning("The supplied archive(s) contain no entries");
-            return;
+            return Enumerable.Empty<FileInfoData>();
         }
 
         var data = fileData
@@ -63,8 +61,6 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         var extractedPath = GetExtractedPath(outputPath);
         if (!_fileSystemUtils.DirectoryExists(extractedPath))
             _fileSystemUtils.CreateDirectory(extractedPath);
-
-        _logger.Information("Processing files");
 
         var extractedFiles = new ConcurrentBag<FileInfoData>();
         foreach (var pair in data.AsParallel())
@@ -84,20 +80,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
             }
         }
 
-        var sortedFileData = fileData
-            .OrderBy(fileInfo => fileInfo.Directory)
-            .ThenBy(fileInfo => fileInfo.Name)
-            .ToHashSet();
-
-        sortedFileData.SymmetricExceptWith(extractedFiles);
-        if (!sortedFileData.Any())
-        {
-            _logger.Information("Processing completed. All files have been successfully extracted");
-            return;
-        }
-        _logger.Warning("Processing completed. Missing files detected");
-        foreach (var file in sortedFileData)
-            _logger.Warning("File {File} was not found in the supplied archive(s)", Path.Combine(file.Location, file.Name));
+        return extractedFiles;
     }
 
     private static bool TryGetMatchingEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>

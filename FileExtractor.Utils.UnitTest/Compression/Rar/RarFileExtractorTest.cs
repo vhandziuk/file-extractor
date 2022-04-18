@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using FileExtractor.Common.Logging;
@@ -27,8 +28,8 @@ public class RarFileExtractorTest
     public RarFileExtractorTest()
     {
         _taskRunnerMock
-            .Setup(runner => runner.Run(It.IsAny<Action>()))
-            .Callback<Action>(action => action());
+            .Setup(runner => runner.Run(It.IsAny<Func<IEnumerable<FileInfoData>>>()))
+            .Callback<Func<IEnumerable<FileInfoData>>>(func => func());
 
         _sut = new RarFileExtractor(
             _fileSystemUtilsMock.Object,
@@ -120,13 +121,9 @@ public class RarFileExtractorTest
             });
 
         _loggerMock.Verify(logger =>
-            logger.Information("Processing files"), Times.Once);
-        _loggerMock.Verify(logger =>
             logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), SomeExtractedPath), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Information(It.Is<string>(message => message.StartsWith("Extracting")), It.IsAny<string>(), Path.Combine(SomeExtractedPath, "Test")), Times.Once);
-        _loggerMock.Verify(logger =>
-            logger.Information("Processing completed. All files have been successfully extracted"), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Warning(It.IsAny<string>()), Times.Never);
         _loggerMock.Verify(logger =>
@@ -160,12 +157,6 @@ public class RarFileExtractorTest
                 new FileInfoData("Test", "NonMatchingName2.dat", "SomeDirectory2")
             });
 
-        _loggerMock.Verify(logger =>
-            logger.Information("Processing files"), Times.Once);
-        _loggerMock.Verify(logger =>
-            logger.Warning("Processing completed. Missing files detected"), Times.Once);
-        _loggerMock.Verify(logger =>
-            logger.Warning(It.Is<string>(message => message.EndsWith("was not found in the supplied archive(s)")), It.IsAny<object[]>()), Times.Exactly(2));
         rarArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
         rarArchiveEntry2Mock.Verify(entry =>
