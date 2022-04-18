@@ -2,13 +2,10 @@ using FileExtractor.Utils.Compression.Common;
 
 namespace FileExtractor.Utils.Compression.Zip;
 
-public sealed class ZipFileUtils : IZipFileUtils
+public sealed class ZipFileUtils : GenericArchiveFileUtilsBase, IZipFileUtils
 {
-    private readonly IZipFile _zipFile;
-
-    public ZipFileUtils(IZipFile zipFile) =>
-        _zipFile = zipFile;
-
-    public IGenericArchive OpenRead(string archiveFileName) =>
-        _zipFile.OpenRead(archiveFileName);
+    public ZipFileUtils(IZipFile zipFile)
+        : base(zipFile)
+    {
+    }
 }

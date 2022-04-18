@@ -2,7 +2,6 @@ using FileExtractor.Utils.Compression.Common;
 
 namespace FileExtractor.Utils.Compression.SevenZip;
 
-public interface ISevenZipFileUtils
+public interface ISevenZipFileUtils : IGenericArchiveFileUtils
 {
-    IGenericArchive OpenRead(string archiveFileName);
 }

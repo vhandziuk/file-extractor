@@ -5,13 +5,14 @@ namespace FileExtractor.Utils.Compression.SevenZip;
 
 internal sealed class SevenZipArchiveWrapper : IGenericArchive
 {
-    private readonly SevenZipArchive _rarArchive;
+    private readonly SevenZipArchive _sevenZipArchive;
 
-    public SevenZipArchiveWrapper(SevenZipArchive rarArchive) =>
-        _rarArchive = rarArchive;
+    public SevenZipArchiveWrapper(SevenZipArchive sevenZipArchive) =>
+        _sevenZipArchive = sevenZipArchive;
 
     public IReadOnlyCollection<IGenericArchiveEntry> Entries =>
-        _rarArchive.Entries.Select(entry => new SevenZipArchiveEntryWrapper(entry)).ToArray();
+        _sevenZipArchive.Entries.Select(entry => new SevenZipArchiveEntryWrapper(entry)).ToArray();
 
-    public void Dispose() => _rarArchive?.Dispose();
+    public void Dispose() =>
+        _sevenZipArchive?.Dispose();
 }

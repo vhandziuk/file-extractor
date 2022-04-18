@@ -6,12 +6,12 @@ namespace FileExtractor.Utils.UnitTest.Compression.Rar;
 
 public class RarFileUtilsTest
 {
-    private readonly Mock<IRarFile> _zipFileMock = new();
+    private readonly Mock<IRarFile> _rarFileMock = new();
     private readonly RarFileUtils _sut;
 
     public RarFileUtilsTest()
     {
-        _sut = new RarFileUtils(_zipFileMock.Object);
+        _sut = new RarFileUtils(_rarFileMock.Object);
     }
 
     [Fact]
@@ -21,7 +21,7 @@ public class RarFileUtilsTest
 
         _sut.OpenRead(someArchiveFileName);
 
-        _zipFileMock.Verify(file =>
+        _rarFileMock.Verify(file =>
             file.OpenRead(someArchiveFileName), Times.Once);
     }
 }

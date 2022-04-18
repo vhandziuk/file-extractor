@@ -42,7 +42,7 @@ public class RarFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
 
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName1 },
@@ -55,9 +55,9 @@ public class RarFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ExtractedPathsDoNotExist_CreatesExtractedPaths()
     {
-        var rarArchiveEntry = GetMockedRarArchiveEntry(
+        var genericArchiveEntry = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
         LetDirectoryNotExist(SomeExtractedPath);
         LetDirectoryNotExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -78,9 +78,9 @@ public class RarFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ExtractedPathExists_DoesNotCreateExtractedPaths()
     {
-        var rarArchiveEntry = GetMockedRarArchiveEntry(
+        var genericArchiveEntry = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
         LetDirectoryExist(SomeExtractedPath);
         LetDirectoryExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -99,14 +99,14 @@ public class RarFileExtractorTest
     }
 
     [Fact]
-    public async Task ExtractFiles_RarArchivesContainMatchingEntries_ExtractsEntries()
+    public async Task ExtractFiles_ArchivesContainMatchingEntries_ExtractsEntries()
     {
-        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry1Mock = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
-        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
-        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -129,21 +129,21 @@ public class RarFileExtractorTest
             logger.Warning(It.IsAny<string>()), Times.Never);
         _loggerMock.Verify(logger =>
             logger.Warning(It.IsAny<string>(), It.IsAny<object[]>()), Times.Never);
-        rarArchiveEntry1Mock.Verify(entry =>
+        genericArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Once);
-        rarArchiveEntry2Mock.Verify(entry =>
+        genericArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Once);
     }
 
     [Fact]
-    public async Task ExtractFiles_RarArchivesDoNotContainMatchingEntries_DoesNotExtractEntries()
+    public async Task ExtractFiles_ArchivesDoNotContainMatchingEntries_DoesNotExtractEntries()
     {
-        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry1Mock = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
-        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
-        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -158,21 +158,21 @@ public class RarFileExtractorTest
                 new FileInfoData("Test", "NonMatchingName2.dat", "SomeDirectory2")
             });
 
-        rarArchiveEntry1Mock.Verify(entry =>
+        genericArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
-        rarArchiveEntry2Mock.Verify(entry =>
+        genericArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), true), Times.Never);
     }
 
     [Fact]
-    public async Task ExtractFiles_RarArchivesContainNoMatchingEntriesByFileName_DoesNotExtractEntries()
+    public async Task ExtractFiles_ArchivesContainNoMatchingEntriesByFileName_DoesNotExtractEntries()
     {
-        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry1Mock = GetMockedGenericArchiveEntry(
             "SomeOtherName1.dat", @"SomeDirectory\SomeOtherName1.dat");
-        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeOtherName2.dat", @"SomeDirectory\SomeOtherName2.dat");
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
-        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -187,21 +187,21 @@ public class RarFileExtractorTest
                 new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
             });
 
-        rarArchiveEntry1Mock.Verify(entry =>
+        genericArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
-        rarArchiveEntry2Mock.Verify(entry =>
+        genericArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
     [Fact]
-    public async Task ExtractFiles_RarArchivesContainNoMatchingEntriesByParentDirectory_DoesNotExtractEntries()
+    public async Task ExtractFiles_ArchivesContainNoMatchingEntriesByParentDirectory_DoesNotExtractEntries()
     {
-        var rarArchiveEntry1Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry1Mock = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeOtherDirectory\SomeName1.dat");
-        var rarArchiveEntry2Mock = GetMockedRarArchiveEntry(
+        var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeOtherDirectory\SomeName2.dat");
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, rarArchiveEntry1Mock.Object);
-        LetRarArchiveEntriesBe(SomeArchiveFileName2, rarArchiveEntry2Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetGenericArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -216,13 +216,13 @@ public class RarFileExtractorTest
                 new FileInfoData("Test", "SomeName2.dat", "SomeDirectory")
             });
 
-        rarArchiveEntry1Mock.Verify(entry =>
+        genericArchiveEntry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Never);
-        rarArchiveEntry2Mock.Verify(entry =>
+        genericArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
-    private Mock<IGenericArchiveEntry> GetMockedRarArchiveEntry(string name, string fullName)
+    private Mock<IGenericArchiveEntry> GetMockedGenericArchiveEntry(string name, string fullName)
     {
         var mock = new Mock<IGenericArchiveEntry>();
         mock.SetupGet(entry => entry.Name).Returns(name);
@@ -231,7 +231,7 @@ public class RarFileExtractorTest
         return mock;
     }
 
-    private void LetRarArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
+    private void LetGenericArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
         _rarFileUtilsMock
             .Setup(utils => utils.OpenRead(archiveFileName))
             .Returns(Mock.Of<IGenericArchive>(archive => archive.Entries == entries));

@@ -6,35 +6,35 @@ using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
 using FileExtractor.Utils.Compression.Common;
-using FileExtractor.Utils.Compression.Zip;
+using FileExtractor.Utils.Compression.SevenZip;
 using FileExtractor.Utils.FileSystem;
 using Moq;
 using Xunit;
 
-namespace FileExtractor.Utils.UnitTest.Compression.Zip;
+namespace FileExtractor.Utils.UnitTest.Compression.SevenZip;
 
-public class ZipFileExtractorTest
+public class SevenZipFileExtractorTest
 {
     private const string SomeExtractedPath = @"C:\Extracted";
-    private const string SomeArchiveFileName1 = @"C:\SomeArchive1.zip";
-    private const string SomeArchiveFileName2 = @"C:\SomeArchive2.zip";
+    private const string SomeArchiveFileName1 = @"C:\SomeArchive1.7z";
+    private const string SomeArchiveFileName2 = @"C:\SomeArchive2.7z";
 
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
-    private readonly Mock<IZipFileUtils> _zipFileUtilsMock = new();
+    private readonly Mock<ISevenZipFileUtils> _sevenZipFileUtilsMock = new();
     private readonly Mock<ITaskRunner> _taskRunnerMock = new();
-    private readonly Mock<ILogger<ZipFileExtractor>> _loggerMock = new();
+    private readonly Mock<ILogger<SevenZipFileExtractor>> _loggerMock = new();
 
-    private readonly ZipFileExtractor _sut;
+    private readonly SevenZipFileExtractor _sut;
 
-    public ZipFileExtractorTest()
+    public SevenZipFileExtractorTest()
     {
         _taskRunnerMock
             .Setup(runner => runner.Run(It.IsAny<Func<IEnumerable<FileInfoData>>>()))
             .Callback<Func<IEnumerable<FileInfoData>>>(func => func());
 
-        _sut = new ZipFileExtractor(
+        _sut = new SevenZipFileExtractor(
             _fileSystemUtilsMock.Object,
-            _zipFileUtilsMock.Object,
+            _sevenZipFileUtilsMock.Object,
             _taskRunnerMock.Object,
             _loggerMock.Object);
     }
@@ -42,7 +42,7 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
 
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName1 },
@@ -57,7 +57,7 @@ public class ZipFileExtractorTest
     {
         var genericArchiveEntry = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
         LetDirectoryNotExist(SomeExtractedPath);
         LetDirectoryNotExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -80,7 +80,7 @@ public class ZipFileExtractorTest
     {
         var genericArchiveEntry = GetMockedGenericArchiveEntry(
             "SomeName1.dat", @"SomeDirectory\SomeName1.dat").Object;
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry);
         LetDirectoryExist(SomeExtractedPath);
         LetDirectoryExist(Path.Combine(SomeExtractedPath, "Test"));
 
@@ -105,8 +105,8 @@ public class ZipFileExtractorTest
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
         var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -142,8 +142,8 @@ public class ZipFileExtractorTest
             "SomeName1.dat", @"SomeDirectory1\SomeName1.dat");
         var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -171,8 +171,8 @@ public class ZipFileExtractorTest
             "SomeOtherName1.dat", @"SomeDirectory\SomeOtherName1.dat");
         var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeOtherName2.dat", @"SomeDirectory\SomeOtherName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -200,8 +200,8 @@ public class ZipFileExtractorTest
             "SomeName1.dat", @"SomeOtherDirectory\SomeName1.dat");
         var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
             "SomeName2.dat", @"SomeOtherDirectory\SomeName2.dat");
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
-        LetZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
+        LetSevenZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
 
         await _sut.ExtractFiles(
             new[]
@@ -231,8 +231,8 @@ public class ZipFileExtractorTest
         return mock;
     }
 
-    private void LetZipArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
-        _zipFileUtilsMock
+    private void LetSevenZipArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
+        _sevenZipFileUtilsMock
             .Setup(utils => utils.OpenRead(archiveFileName))
             .Returns(Mock.Of<IGenericArchive>(archive => archive.Entries == entries));
 
