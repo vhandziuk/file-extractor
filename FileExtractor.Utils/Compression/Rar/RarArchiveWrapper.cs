@@ -13,5 +13,6 @@ internal sealed class RarArchiveWrapper : IGenericArchive
     public IReadOnlyCollection<IGenericArchiveEntry> Entries =>
         _rarArchive.Entries.Select(entry => new RarArchiveEntryWrapper(entry)).ToArray();
 
-    public void Dispose() => _rarArchive?.Dispose();
+    public void Dispose() =>
+        _rarArchive?.Dispose();
 }

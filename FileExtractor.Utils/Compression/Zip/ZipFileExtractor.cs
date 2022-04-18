@@ -1,7 +1,5 @@
-using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
-using FileExtractor.Data;
 using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.FileSystem;
 
