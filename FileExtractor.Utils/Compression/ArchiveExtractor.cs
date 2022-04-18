@@ -56,6 +56,7 @@ public sealed class ArchiveExtractor : IArchiveExtractor
         {
             ".zip" => ArchiveType.Zip,
             ".rar" => ArchiveType.Rar,
+            ".7z" => ArchiveType.SevenZip,
             ".tar" => ArchiveType.Other,
             ".bz2" => ArchiveType.Other,
             ".gz" => ArchiveType.Other,

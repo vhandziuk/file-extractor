@@ -11,6 +11,7 @@ internal sealed class App : IApp
     {
         ".zip",
         ".rar",
+        ".7z",
         ".tar",
         ".bz2",
         ".gz",

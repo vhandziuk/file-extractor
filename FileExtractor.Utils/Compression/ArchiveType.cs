@@ -4,5 +4,6 @@ public enum ArchiveType
 {
     Zip,
     Rar,
+    SevenZip,
     Other
 }
