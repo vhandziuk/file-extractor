@@ -56,6 +56,11 @@ public sealed class ArchiveExtractor : IArchiveExtractor
         {
             ".zip" => ArchiveType.Zip,
             ".rar" => ArchiveType.Rar,
+            ".tar" => ArchiveType.Other,
+            ".bz2" => ArchiveType.Other,
+            ".gz" => ArchiveType.Other,
+            ".lz" => ArchiveType.Other,
+            ".xz" => ArchiveType.Other,
             _ => throw new Exception("Unsupported archive type")
         };
 }

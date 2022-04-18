@@ -1,4 +1,5 @@
 using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.Compression.Other;
 using FileExtractor.Utils.Compression.Rar;
 using FileExtractor.Utils.Compression.Zip;
 using FileExtractor.Utils.FileSystem;
@@ -13,6 +14,7 @@ namespace FileExtractor.Utils.DiRegistration;
 [Register(typeof(RarFileExtractor), Scope.SingleInstance, typeof(IRarFileExtractor))]
 [Register(typeof(RarFileUtils), Scope.SingleInstance, typeof(IRarFileUtils))]
 [Register(typeof(RarFileWrapper), Scope.SingleInstance, typeof(IRarFile))]
+[Register(typeof(OtherArchiveFileExtractor), Scope.SingleInstance, typeof(IOtherArchiveFileExtractor))]
 [Register(typeof(ArchiveExtractorFactory), Scope.SingleInstance, typeof(IArchiveExtractorFactory))]
 [Register(typeof(ArchiveExtractor), Scope.SingleInstance, typeof(IArchiveExtractor))]
 public sealed class FileExtractorUtilsModule

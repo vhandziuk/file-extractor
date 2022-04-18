@@ -63,6 +63,7 @@ public sealed class RarFileExtractor : IRarFileExtractor
             _fileSystemUtils.CreateDirectory(extractedPath);
 
         var extractedFiles = new ConcurrentBag<FileInfoData>();
+
         foreach (var pair in data.AsParallel())
         {
             var destinationPath = Path.Combine(extractedPath, pair.Key);

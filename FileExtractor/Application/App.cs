@@ -7,7 +7,16 @@ namespace FileExtractor.Application;
 
 internal sealed class App : IApp
 {
-    private readonly string[] _supportedArchiveExtensions = { ".zip", ".rar" };
+    private readonly string[] _supportedArchiveExtensions =
+    {
+        ".zip",
+        ".rar",
+        ".tar",
+        ".bz2",
+        ".gz",
+        ".lz",
+        ".xz"
+    };
 
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly ICsvFileInfoProvider _fileInfoProvider;
