@@ -64,7 +64,7 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
 
         var extractedFiles = new ConcurrentBag<FileInfoData>();
 
-        foreach (var pair in data.AsParallel())
+        foreach (var pair in data)
         {
             var destinationPath = Path.Combine(extractedPath, pair.Key);
             if (!_fileSystemUtils.DirectoryExists(destinationPath))
