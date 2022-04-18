@@ -57,9 +57,17 @@ public sealed class OtherArchiveFileExtractor : IOtherArchiveFileExtractor
                                 if (!_fileSystemUtils.DirectoryExists(destinationPath))
                                     _fileSystemUtils.CreateDirectory(destinationPath);
 
+                                var extractedFilePath = Path.Combine(destinationPath, fileInfo.Name);
+                                if (_fileSystemUtils.FileExists(extractedFilePath))
+                                {
+                                    _logger.Warning("File {File} already exists in {Path}. Skipping extraction", fileInfo.Name, destinationPath);
+                                    extractedFiles.Add(fileInfo);
+                                    continue;
+                                }
+
                                 _logger.Information("Extracting {File} to {Path}", fileInfo.Name, destinationPath);
                                 reader.WriteEntryToFile(
-                                    Path.Combine(destinationPath, fileInfo.Name),
+                                    extractedFilePath,
                                     new ExtractionOptions
                                     {
                                         ExtractFullPath = true,

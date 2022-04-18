@@ -26,6 +26,8 @@ public sealed class FileSystemUtils : IFileSystemUtils
 
     public bool DirectoryExists(string path) => Directory.Exists(path);
 
+    public bool FileExists(string path) => File.Exists(path);
+
     public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
     {
         try

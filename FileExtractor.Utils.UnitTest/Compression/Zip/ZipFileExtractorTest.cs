@@ -107,6 +107,8 @@ public class ZipFileExtractorTest
             "SomeName2.dat", @"SomeDirectory2\SomeName2.dat");
         LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object);
         LetZipArchiveEntriesBe(SomeArchiveFileName2, genericArchiveEntry2Mock.Object);
+        LetFileNotExist(Path.Combine(SomeExtractedPath, "SomeName1.dat"));
+        LetFileNotExist(Path.Combine(SomeExtractedPath, "SomeName2.dat"));
 
         await _sut.ExtractFiles(
             new[]
@@ -133,6 +135,24 @@ public class ZipFileExtractorTest
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Once);
         genericArchiveEntry2Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExtractFiles_FileAlreadyExistsInExtractedFolder_DoesNotExtractFile()
+    {
+        var genericArchiveEntryMock = GetMockedGenericArchiveEntry(
+            "SomeName.dat", @"SomeDirectory\SomeName.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntryMock.Object);
+        LetFileExist(Path.Combine(SomeExtractedPath, "SomeName.dat"));
+
+        await _sut.ExtractFiles(new[] { SomeArchiveFileName1 },
+            SomeExtractedPath,
+            new[] { new FileInfoData("", "SomeName.dat", "SomeDirectory") });
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("File {File} already exists in {Path}. Skipping extraction", "SomeName.dat", SomeExtractedPath), Times.Once);
+        genericArchiveEntryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName.dat"), true), Times.Never);
     }
 
     [Fact]
@@ -244,5 +264,15 @@ public class ZipFileExtractorTest
     private void LetDirectoryNotExist(string path) =>
         _fileSystemUtilsMock
             .Setup(utils => utils.DirectoryExists(path))
+            .Returns(false);
+
+    private void LetFileExist(string path) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.FileExists(path))
+            .Returns(true);
+
+    private void LetFileNotExist(string path) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.FileExists(path))
             .Returns(false);
 }

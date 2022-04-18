@@ -75,8 +75,17 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
                 if (!TryGetMatchingEntry(archiveEntry, pair.Value, out var fileInfo))
                     continue;
 
+                var extractedFilePath = Path.Combine(destinationPath, fileInfo.Name);
+
+                if (_fileSystemUtils.FileExists(extractedFilePath))
+                {
+                    _logger.Warning("File {File} already exists in {Path}. Skipping extraction", fileInfo.Name, destinationPath);
+                    extractedFiles.Add(fileInfo);
+                    continue;
+                }
+
                 _logger.Information("Extracting {File} to {Path}", fileInfo.Name, destinationPath);
-                archiveEntry.ExtractToFile(Path.Combine(destinationPath, fileInfo.Name), overwrite: true);
+                archiveEntry.ExtractToFile(extractedFilePath, overwrite: true);
                 extractedFiles.Add(fileInfo);
             }
         }
