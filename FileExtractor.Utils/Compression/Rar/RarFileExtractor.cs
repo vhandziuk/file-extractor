@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.FileSystem;
 
 namespace FileExtractor.Utils.Compression.Rar;
@@ -29,7 +30,7 @@ public sealed class RarFileExtractor : IRarFileExtractor
         await _taskRunner.Run(
             () =>
             {
-                var rarArchives = Enumerable.Empty<IRarArchive>();
+                var rarArchives = Enumerable.Empty<IGenericArchive>();
                 try
                 {
                     rarArchives = archives.Select(_rarFileUtils.OpenRead);
@@ -43,10 +44,10 @@ public sealed class RarFileExtractor : IRarFileExtractor
                 }
             });
 
-    private static IEnumerable<IRarArchiveEntry> GetEntries(IEnumerable<IRarArchive> rarArchives) =>
+    private static IEnumerable<IGenericArchiveEntry> GetEntries(IEnumerable<IGenericArchive> rarArchives) =>
         rarArchives.SelectMany(archive => archive.Entries);
 
-    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IRarArchiveEntry> rarEntries, string outputPath, IEnumerable<FileInfoData> fileData)
+    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IGenericArchiveEntry> rarEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (rarEntries?.Any() != true)
         {
@@ -84,7 +85,7 @@ public sealed class RarFileExtractor : IRarFileExtractor
         return extractedFiles;
     }
 
-    private static bool TryGetMatchingEntry(IRarArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
+    private static bool TryGetMatchingEntry(IGenericArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
         data.TryGetValue(entry.Name, out fileInfo)
         && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true

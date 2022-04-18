@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.Compression.Zip;
 using FileExtractor.Utils.FileSystem;
 using Moq;
@@ -41,7 +42,7 @@ public class ZipFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IZipArchiveEntry>());
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
 
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName1 },
@@ -221,19 +222,19 @@ public class ZipFileExtractorTest
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
-    private Mock<IZipArchiveEntry> GetMockedZipArchiveEntry(string name, string fullName)
+    private Mock<IGenericArchiveEntry> GetMockedZipArchiveEntry(string name, string fullName)
     {
-        var mock = new Mock<IZipArchiveEntry>();
+        var mock = new Mock<IGenericArchiveEntry>();
         mock.SetupGet(entry => entry.Name).Returns(name);
         mock.SetupGet(entry => entry.FullName).Returns(fullName);
 
         return mock;
     }
 
-    private void LetZipArchiveEntriesBe(string archiveFileName, params IZipArchiveEntry[] entries) =>
+    private void LetZipArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
         _zipFileUtilsMock
             .Setup(utils => utils.OpenRead(archiveFileName))
-            .Returns(Mock.Of<IZipArchive>(archive => archive.Entries == entries));
+            .Returns(Mock.Of<IGenericArchive>(archive => archive.Entries == entries));
 
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock

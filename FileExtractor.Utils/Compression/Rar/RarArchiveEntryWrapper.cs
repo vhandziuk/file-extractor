@@ -1,10 +1,11 @@
+using FileExtractor.Utils.Compression.Common;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
 
 namespace FileExtractor.Utils.Compression.Rar;
 
-internal sealed class RarArchiveEntryWrapper : IRarArchiveEntry
+internal sealed class RarArchiveEntryWrapper : IGenericArchiveEntry
 {
     private readonly RarArchiveEntry _rarArchiveEntry;
 

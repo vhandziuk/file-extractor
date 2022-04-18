@@ -1,6 +1,8 @@
+using FileExtractor.Utils.Compression.Common;
+
 namespace FileExtractor.Utils.Compression.Rar;
 
 public interface IRarFileUtils
 {
-    IRarArchive OpenRead(string archiveFileName);
+    IGenericArchive OpenRead(string archiveFileName);
 }

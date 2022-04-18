@@ -1,6 +1,8 @@
+using FileExtractor.Utils.Compression.Common;
+
 namespace FileExtractor.Utils.Compression.Zip;
 
 public interface IZipFileUtils
 {
-    IZipArchive OpenRead(string archiveFileName);
+    IGenericArchive OpenRead(string archiveFileName);
 }

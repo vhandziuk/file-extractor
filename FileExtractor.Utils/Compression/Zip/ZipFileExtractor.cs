@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.FileSystem;
 
 namespace FileExtractor.Utils.Compression.Zip;
@@ -29,7 +30,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         await _taskRunner.Run(
             () =>
             {
-                var zipArchives = Enumerable.Empty<IZipArchive>();
+                var zipArchives = Enumerable.Empty<IGenericArchive>();
                 try
                 {
                     zipArchives = archives.Select(_zipFileUtils.OpenRead);
@@ -43,10 +44,10 @@ public sealed class ZipFileExtractor : IZipFileExtractor
                 }
             });
 
-    private static IEnumerable<IZipArchiveEntry> GetEntries(IEnumerable<IZipArchive> zipArchives) =>
+    private static IEnumerable<IGenericArchiveEntry> GetEntries(IEnumerable<IGenericArchive> zipArchives) =>
         zipArchives.SelectMany(archive => archive.Entries);
 
-    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IZipArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
+    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IGenericArchiveEntry> zipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (zipEntries?.Any() != true)
         {
@@ -84,7 +85,7 @@ public sealed class ZipFileExtractor : IZipFileExtractor
         return extractedFiles;
     }
 
-    private static bool TryGetMatchingEntry(IZipArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
+    private static bool TryGetMatchingEntry(IGenericArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
         data.TryGetValue(entry.Name, out fileInfo)
         && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true

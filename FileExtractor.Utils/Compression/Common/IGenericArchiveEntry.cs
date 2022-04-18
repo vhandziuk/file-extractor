@@ -1,6 +1,6 @@
-namespace FileExtractor.Utils.Compression.Zip;
+namespace FileExtractor.Utils.Compression.Common;
 
-public interface IZipArchiveEntry
+public interface IGenericArchiveEntry
 {
     string Name { get; }
     string FullName { get; }

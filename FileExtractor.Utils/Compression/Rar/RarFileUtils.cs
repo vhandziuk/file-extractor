@@ -1,3 +1,5 @@
+using FileExtractor.Utils.Compression.Common;
+
 namespace FileExtractor.Utils.Compression.Rar;
 
 public sealed class RarFileUtils : IRarFileUtils
@@ -7,6 +9,6 @@ public sealed class RarFileUtils : IRarFileUtils
     public RarFileUtils(IRarFile rarFile) =>
         _rarFile = rarFile;
 
-    public IRarArchive OpenRead(string archiveFileName) =>
+    public IGenericArchive OpenRead(string archiveFileName) =>
         _rarFile.OpenRead(archiveFileName);
 }

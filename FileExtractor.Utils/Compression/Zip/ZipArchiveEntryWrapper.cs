@@ -1,8 +1,9 @@
 using System.IO.Compression;
+using FileExtractor.Utils.Compression.Common;
 
 namespace FileExtractor.Utils.Compression.Zip;
 
-internal sealed class ZipArchiveEntryWrapper : IZipArchiveEntry
+internal sealed class ZipArchiveEntryWrapper : IGenericArchiveEntry
 {
     private readonly ZipArchiveEntry _zipArchiveEntry;
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.Compression.Rar;
 using FileExtractor.Utils.FileSystem;
 using Moq;
@@ -41,7 +42,7 @@ public class RarFileExtractorTest
     [Fact]
     public async Task ExtractFiles_ArchivesContainNoEntries_LogsWarning()
     {
-        LetRarArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IRarArchiveEntry>());
+        LetRarArchiveEntriesBe(SomeArchiveFileName1, Array.Empty<IGenericArchiveEntry>());
 
         await _sut.ExtractFiles(
             new[] { SomeArchiveFileName1 },
@@ -221,19 +222,19 @@ public class RarFileExtractorTest
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
-    private Mock<IRarArchiveEntry> GetMockedRarArchiveEntry(string name, string fullName)
+    private Mock<IGenericArchiveEntry> GetMockedRarArchiveEntry(string name, string fullName)
     {
-        var mock = new Mock<IRarArchiveEntry>();
+        var mock = new Mock<IGenericArchiveEntry>();
         mock.SetupGet(entry => entry.Name).Returns(name);
         mock.SetupGet(entry => entry.FullName).Returns(fullName);
 
         return mock;
     }
 
-    private void LetRarArchiveEntriesBe(string archiveFileName, params IRarArchiveEntry[] entries) =>
+    private void LetRarArchiveEntriesBe(string archiveFileName, params IGenericArchiveEntry[] entries) =>
         _rarFileUtilsMock
             .Setup(utils => utils.OpenRead(archiveFileName))
-            .Returns(Mock.Of<IRarArchive>(archive => archive.Entries == entries));
+            .Returns(Mock.Of<IGenericArchive>(archive => archive.Entries == entries));
 
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock

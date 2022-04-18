@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.FileSystem;
 
 namespace FileExtractor.Utils.Compression.SevenZip;
@@ -29,7 +30,7 @@ public sealed class SevenZipFileExtractor : ISevenZipFileExtractor
         await _taskRunner.Run(
             () =>
             {
-                var sevenZipArchives = Enumerable.Empty<ISevenZipArchive>();
+                var sevenZipArchives = Enumerable.Empty<IGenericArchive>();
                 try
                 {
                     sevenZipArchives = archives.Select(_sevenZipFileUtils.OpenRead);
@@ -43,10 +44,10 @@ public sealed class SevenZipFileExtractor : ISevenZipFileExtractor
                 }
             });
 
-    private static IEnumerable<ISevenZipArchiveEntry> GetEntries(IEnumerable<ISevenZipArchive> sevenZipArchives) =>
+    private static IEnumerable<IGenericArchiveEntry> GetEntries(IEnumerable<IGenericArchive> sevenZipArchives) =>
         sevenZipArchives.SelectMany(archive => archive.Entries);
 
-    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<ISevenZipArchiveEntry> sevenZipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
+    private IEnumerable<FileInfoData> ExtractInternal(IEnumerable<IGenericArchiveEntry> sevenZipEntries, string outputPath, IEnumerable<FileInfoData> fileData)
     {
         if (sevenZipEntries?.Any() != true)
         {
@@ -84,7 +85,7 @@ public sealed class SevenZipFileExtractor : ISevenZipFileExtractor
         return extractedFiles;
     }
 
-    private static bool TryGetMatchingEntry(ISevenZipArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
+    private static bool TryGetMatchingEntry(IGenericArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
         data.TryGetValue(entry.Name, out fileInfo)
         && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true

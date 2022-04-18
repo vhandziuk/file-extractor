@@ -1,3 +1,5 @@
+using FileExtractor.Utils.Compression.Common;
+
 namespace FileExtractor.Utils.Compression.SevenZip;
 
 public sealed class SevenZipFileUtils : ISevenZipFileUtils
@@ -7,6 +9,6 @@ public sealed class SevenZipFileUtils : ISevenZipFileUtils
     public SevenZipFileUtils(ISevenZipFile sevenZipFile) =>
         _sevenZipFile = sevenZipFile;
 
-    public ISevenZipArchive OpenRead(string archiveFileName) =>
+    public IGenericArchive OpenRead(string archiveFileName) =>
         _sevenZipFile.OpenRead(archiveFileName);
 }
