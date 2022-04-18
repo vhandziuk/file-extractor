@@ -2,5 +2,6 @@ namespace FileExtractor.Common.Threading;
 
 public interface ITaskRunner
 {
-    Task Run(Action action);
+    Task<T> Run<T>(Func<T> func);
+    Task<T> Run<T>(Func<Task<T>> func);
 }

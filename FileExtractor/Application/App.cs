@@ -7,20 +7,32 @@ namespace FileExtractor.Application;
 
 internal sealed class App : IApp
 {
+    private readonly string[] _supportedArchiveExtensions =
+    {
+        ".zip",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".bz2",
+        ".gz",
+        ".lz",
+        ".xz"
+    };
+
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly ICsvFileInfoProvider _fileInfoProvider;
-    private readonly IZipFileExtractor _zipFileExtractor;
+    private readonly IArchiveExtractor _archiveExtractor;
     private readonly ILogger<App> _logger;
 
     public App(
         IFileSystemUtils fileSystemUtils,
         ICsvFileInfoProvider fileInfoProvider,
-        IZipFileExtractor zipFileExtractor,
+        IArchiveExtractor archiveExtractor,
         ILogger<App> logger)
     {
         _fileSystemUtils = fileSystemUtils;
         _fileInfoProvider = fileInfoProvider;
-        _zipFileExtractor = zipFileExtractor;
+        _archiveExtractor = archiveExtractor;
         _logger = logger;
     }
 
@@ -35,11 +47,13 @@ internal sealed class App : IApp
         try
         {
             var archives = _fileSystemUtils
-                .EnumerateFiles(sourcePath, "*.zip", SearchOption.AllDirectories);
+                .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
+                .Where(filePath =>
+                    _supportedArchiveExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase));
 
             if (!archives.Any())
             {
-                _logger.Warning("Source directory contains no .zip files. The program will now exit");
+                _logger.Warning("Source directory contains no supported archive files. The program will now exit");
                 return;
             }
 
@@ -53,7 +67,7 @@ internal sealed class App : IApp
             }
 
             _logger.Information("Starting file extraction");
-            await _zipFileExtractor.ExtractFiles(archives, destinationPath, fileData);
+            await _archiveExtractor.ExtractFiles(archives, destinationPath, fileData);
             _logger.Information("File exctaction completed");
         }
         catch (Exception ex)

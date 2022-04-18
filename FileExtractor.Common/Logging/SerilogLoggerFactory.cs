@@ -16,8 +16,8 @@ internal static class SerilogLoggerFactory
     private static readonly string _logFilePath = Path.Combine(
         Environment.GetFolderPath(SpecialFolder.CommonApplicationData), "FileExtractor", "Application.log");
 
-    private static readonly Lazy<ILogger> _logger =
-        new Lazy<ILogger>(() =>
+    private static readonly Lazy<Serilog.ILogger> _logger =
+        new Lazy<Serilog.ILogger>(() =>
             new LoggerConfiguration()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
@@ -34,6 +34,6 @@ internal static class SerilogLoggerFactory
                 )
                 .CreateLogger());
 
-    public static ILogger Create<T>() =>
+    public static Serilog.ILogger Create<T>() =>
         _logger.Value.ForContext(Constants.SourceContextPropertyName, typeof(T).Name);
 }

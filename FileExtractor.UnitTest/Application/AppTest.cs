@@ -19,7 +19,7 @@ public class AppTest
 
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
-    private readonly Mock<IZipFileExtractor> _zipFileExtractorMock = new();
+    private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
     private readonly ICommandLineOptions _commandlineOptions = Mock.Of<ICommandLineOptions>(options =>
         options.Source == SomeSourcePath
@@ -33,7 +33,7 @@ public class AppTest
         _sut = new App(
             _fileSystemUtilsMock.Object,
             _fileInfoProviderMock.Object,
-            _zipFileExtractorMock.Object,
+            _archiveExtractorMock.Object,
             _loggerMock.Object);
     }
 
@@ -45,9 +45,9 @@ public class AppTest
         await _sut.RunAsync(_commandlineOptions);
 
         _loggerMock.Verify(logger =>
-            logger.Warning("Source directory contains no .zip files. The program will now exit"));
+            logger.Warning("Source directory contains no supported archive files. The program will now exit"));
         _fileInfoProviderMock.VerifyNoOtherCalls();
-        _zipFileExtractorMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class AppTest
 
         _loggerMock.Verify(logger =>
             logger.Warning("Supplied configuration contains files to extract. The program will now exit"));
-        _zipFileExtractorMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class AppTest
 
         _loggerMock.Verify(logger =>
             logger.Information("Starting file extraction"));
-        _zipFileExtractorMock.Verify(extractor =>
+        _archiveExtractorMock.Verify(extractor =>
             extractor.ExtractFiles(archives, SomeDestinationPath, fileData), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Information("File exctaction completed"));
@@ -94,7 +94,7 @@ public class AppTest
 
         _loggerMock.Verify(logger =>
             logger.Error(expectedException, "An exception occurred. The program will now exit"));
-        _zipFileExtractorMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class AppTest
         var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
-        _zipFileExtractorMock
+        _archiveExtractorMock
             .Setup(extractor => extractor.ExtractFiles(archives, SomeDestinationPath, fileData))
             .ThrowsAsync(expectedException);
 
@@ -117,7 +117,7 @@ public class AppTest
 
     private void LetGetFilesReturn(string path, params string[] fileNames) =>
         _fileSystemUtilsMock
-            .Setup(utils => utils.EnumerateFiles(path, "*.zip", SearchOption.AllDirectories))
+            .Setup(utils => utils.GetFiles(path, "*.*", SearchOption.AllDirectories))
             .Returns(fileNames);
 
     private void LetEnumerateEntriesReturn(string path, params FileInfoData[] entries) =>
