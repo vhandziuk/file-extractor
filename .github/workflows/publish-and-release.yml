@@ -36,7 +36,7 @@ jobs:
       run: dotnet test --no-build --verbosity normal
             
     - name: Publish
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --no-self-contained
     
     - name: Download latest InnoSetup package
       run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
