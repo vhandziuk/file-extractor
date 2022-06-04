@@ -1,0 +1,55 @@
+#publish-and-release.yml
+name: Publish and release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+
+  publish-and-release:
+    
+    runs-on: windows-latest
+    
+    steps:
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+    
+    - name: Setup NuGet.exe
+      uses: NuGet/setup-nuget@v1.0.6
+      with:
+        nuget-version: latest
+      
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore
+    
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+            
+    - name: Publish
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --self-contained
+    
+    - name: Download latest InnoSetup package
+      run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
+    
+    - name: Pack
+      run: .\Tools.InnoSetup.6.2.1\tools\Compil32.exe /cc .\Setup\Setup.iss
+      
+    - name: Create Release
+      uses: ncipollo/release-action@v1.10.0
+      with:
+        allowUpdates: true
+        artifactErrorsFailBuild: true 
+        artifacts: .\Output\FileExtractorSetup.exe
+        artifactContentType: raw
+        replacesArtifacts: true
+        token: ${{ secrets.GITHUB_TOKEN }}
