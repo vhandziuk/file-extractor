@@ -36,13 +36,18 @@ jobs:
       run: dotnet test --no-build --verbosity normal
             
     - name: Publish
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --no-self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --self-contained
     
     - name: Download latest InnoSetup package
       run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
     
     - name: Pack
-      run: .\Tools.InnoSetup.6.2.1\tools\Compil32.exe /cc .\Setup\Setup.iss
+      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup.iss
+      
+    - name: Wait / Sleep
+      uses: jakejarvis/wait-action@v0.1.1
+      with:
+        time: 30s
       
     - name: Create Release
       uses: ncipollo/release-action@v1.10.0
