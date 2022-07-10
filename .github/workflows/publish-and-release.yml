@@ -35,21 +35,27 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
             
-    - name: Publish
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --self-contained
+    - name: Publish (x86)
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --no-self-contained
+    
+    - name: Publish (x64)
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x64 --no-self-contained
     
     - name: Download latest InnoSetup package
       run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
     
-    - name: Pack
-      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup.iss
+    - name: Pack (x86)
+      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x86.iss
+
+    - name: Pack (x64)
+      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x64.iss
       
     - name: Create Release
       uses: ncipollo/release-action@v1.10.0
       with:
         allowUpdates: true
         artifactErrorsFailBuild: true 
-        artifacts: .\Output\FileExtractorSetup.exe
+        artifacts: .\Output\FileExtractorSetup_x86.exe,.\Output\FileExtractorSetup_x64.exe
         artifactContentType: raw
         replacesArtifacts: true
         token: ${{ secrets.GITHUB_TOKEN }}
