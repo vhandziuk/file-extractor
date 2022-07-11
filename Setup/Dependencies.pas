@@ -1,3 +1,6 @@
+// this is a modified version of Inno Setup Dependency Installer project
+// original code can be found here: https://www.codeproject.com/Articles/20868/Inno-Setup-Dependency-Installer
+ 
 // types and variables
 type
   TDependency_Entry = record
