@@ -40,4 +40,18 @@ public sealed class FileSystemUtils : IFileSystemUtils
             throw;
         }
     }
+
+    public void Copy(string sourceFileName, string destFileName, bool overwrite)
+    {
+        try
+        {
+            File.Copy(sourceFileName, destFileName, overwrite);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to copy file from {SourceFileName} to {DestFileName}", sourceFileName, destFileName);
+        }
+    }
+
+    public string GetAppBaseDirectory() => AppDomain.CurrentDomain.BaseDirectory;
 }
