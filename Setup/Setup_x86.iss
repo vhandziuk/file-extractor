@@ -79,8 +79,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 #ifdef UseNetCoreCheck
 ; download netcorecheck.exe: https://go.microsoft.com/fwlink/?linkid=2135256
 ; download netcorecheck_x64.exe: https://go.microsoft.com/fwlink/?linkid=2135504
-Source: "bin\netcorecheck.exe"; Flags: dontcopy noencryption
-Source: "bin\netcorecheck_x64.exe"; Flags: dontcopy noencryption
+Source: "NetRuntimeCheck\netcorecheck.exe"; Flags: dontcopy noencryption
+Source: "NetRuntimeCheck\netcorecheck_x64.exe"; Flags: dontcopy noencryption
 #endif
 
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
