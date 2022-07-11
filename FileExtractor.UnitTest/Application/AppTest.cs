@@ -13,6 +13,7 @@ namespace FileExtractor.UnitTest.Application;
 
 public class AppTest
 {
+    private const string SomeAppBaseDirectory = @"C:\Program Files\file-extractor";
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
@@ -21,15 +22,21 @@ public class AppTest
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
-    private readonly ICommandLineOptions _commandlineOptions = Mock.Of<ICommandLineOptions>(options =>
-        options.Source == SomeSourcePath
-        && options.Destination == SomeDestinationPath
-        && options.Configuration == SomeConfigurationPath);
+    private readonly Mock<ICommandLineOptions> _commandLineOptionsMock = new();
+
+    private ICommandLineOptions _commandLineOptions => _commandLineOptionsMock.Object;
 
     private readonly App _sut;
 
     public AppTest()
     {
+        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
+
+        LetAppBaseDirectoryBe(SomeAppBaseDirectory);
+        LetDirectoryExist(SomeSourcePath);
+        LetDirectoryExist(SomeDestinationPath);
+        LetFileExist(SomeConfigurationPath);
+
         _sut = new App(
             _fileSystemUtilsMock.Object,
             _fileInfoProviderMock.Object,
@@ -38,11 +45,26 @@ public class AppTest
     }
 
     [Fact]
+    public async Task RunAsync_UnableToLocateConfigurationFile_DoesNotExtractFiles()
+    {
+        LetFileNotExist(SomeConfigurationPath);
+        LetFileNotExist(Path.Combine(SomeSourcePath, "configuration.csv"));
+        LetFileNotExist(Path.Combine(SomeAppBaseDirectory, "configuration.csv"));
+
+        await _sut.RunAsync(_commandLineOptions);
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Unable to locate the configuration file. The program will now exit"));
+        _fileInfoProviderMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task RunAsync_SourceDirectoryDoesNotContainZipFiles_DoesNotExtractFiles()
     {
         LetGetFilesReturn(SomeSourcePath, Array.Empty<string>());
 
-        await _sut.RunAsync(_commandlineOptions);
+        await _sut.RunAsync(_commandLineOptions);
 
         _loggerMock.Verify(logger =>
             logger.Warning("Source directory contains no supported archive files. The program will now exit"));
@@ -56,29 +78,33 @@ public class AppTest
         LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, Array.Empty<FileInfoData>());
 
-        await _sut.RunAsync(_commandlineOptions);
+        await _sut.RunAsync(_commandLineOptions);
 
         _loggerMock.Verify(logger =>
-            logger.Warning("Supplied configuration contains files to extract. The program will now exit"));
+            logger.Warning("Supplied configuration contains no files to extract. The program will now exit"));
         _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task RunAsync_SourceDirectoryContainsZipFilesAndFileDataContainsEntries_ExtractsFiles()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RunAsync_SourceDirectoryContainsZipFilesAndFileDataContainsEntries_ExtractsFiles(bool cacheConfiguration)
     {
         var archives = new[] { "file1.zip", "file2.zip" };
         var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+        LetCacheConfiguratinBe(cacheConfiguration);
 
-        await _sut.RunAsync(_commandlineOptions);
+        await _sut.RunAsync(_commandLineOptions);
 
         _loggerMock.Verify(logger =>
             logger.Information("Starting file extraction"));
         _archiveExtractorMock.Verify(extractor =>
             extractor.ExtractFiles(archives, SomeDestinationPath, fileData), Times.Once);
         _loggerMock.Verify(logger =>
-            logger.Information("File exctaction completed"));
+            logger.Information("File extraction completed"));
+        _fileSystemUtilsMock.Verify(utils => utils.Copy(SomeConfigurationPath, Path.Combine(SomeAppBaseDirectory, "configuration.csv"), true), cacheConfiguration ? Times.Once() : Times.Never());
     }
 
     [Fact]
@@ -90,7 +116,7 @@ public class AppTest
             .Setup(provider => provider.EnumerateEntries(SomeConfigurationPath))
             .Throws(expectedException);
 
-        await _sut.RunAsync(_commandlineOptions);
+        await _sut.RunAsync(_commandLineOptions);
 
         _loggerMock.Verify(logger =>
             logger.Error(expectedException, "An exception occurred. The program will now exit"));
@@ -109,11 +135,47 @@ public class AppTest
             .Setup(extractor => extractor.ExtractFiles(archives, SomeDestinationPath, fileData))
             .ThrowsAsync(expectedException);
 
-        await _sut.RunAsync(_commandlineOptions);
+        await _sut.RunAsync(_commandLineOptions);
 
         _loggerMock.Verify(logger =>
             logger.Error(expectedException, "An exception occurred. The program will now exit"));
     }
+
+    private void SetupCommandLineOptions(string sourcePath, string destinationPath, string configurationPath, bool cacheConfiguration)
+    {
+        _commandLineOptionsMock
+            .Setup(options => options.Source)
+            .Returns(sourcePath);
+        _commandLineOptionsMock
+            .Setup(options => options.Destination)
+            .Returns(destinationPath);
+        _commandLineOptionsMock
+            .Setup(options => options.Configuration)
+            .Returns(configurationPath);
+        _commandLineOptionsMock
+            .Setup(options => options.CacheConfiguration)
+            .Returns(cacheConfiguration);
+    }
+
+    private void LetAppBaseDirectoryBe(string path) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.GetAppBaseDirectory())
+            .Returns(path);
+
+    private void LetDirectoryExist(string path) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.DirectoryExists(path))
+            .Returns(true);
+
+    private void LetFileExist(string filePath) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.FileExists(filePath))
+            .Returns(true);
+
+    private void LetFileNotExist(string filePath) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.FileExists(filePath))
+            .Returns(false);
 
     private void LetGetFilesReturn(string path, params string[] fileNames) =>
         _fileSystemUtilsMock
@@ -124,4 +186,9 @@ public class AppTest
         _fileInfoProviderMock
             .Setup(provider => provider.EnumerateEntries(path))
             .Returns(entries);
+
+    private void LetCacheConfiguratinBe(bool cacheConfiguration) =>
+        _commandLineOptionsMock
+            .Setup(options => options.CacheConfiguration)
+            .Returns(cacheConfiguration);
 }

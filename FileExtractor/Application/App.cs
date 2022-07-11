@@ -38,14 +38,33 @@ internal sealed class App : IApp
 
     public async ValueTask RunAsync(ICommandLineOptions options)
     {
-        var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+        var baseDirectory = _fileSystemUtils.GetAppBaseDirectory();
 
-        var sourcePath = options.Source ?? baseDirectory;
-        var destinationPath = options.Destination ?? sourcePath;
-        var configurationPath = options.Configuration ?? Path.Combine(sourcePath, "configuration.csv");
+        var sourcePath = options.Source != null && _fileSystemUtils.DirectoryExists(options.Source)
+            ? options.Source
+            : baseDirectory;
+        var destinationPath = options.Destination != null && _fileSystemUtils.DirectoryExists(options.Destination)
+            ? options.Destination
+            : sourcePath;
 
         try
         {
+            var defaultConfigurationLocation = Path.Combine(sourcePath, "configuration.csv");
+            var cachedConfigurationLocation = Path.Combine(baseDirectory, "configuration.csv");
+            var configurationPath = options.Configuration != null && _fileSystemUtils.FileExists(options.Configuration)
+                ? options.Configuration
+                : _fileSystemUtils.FileExists(defaultConfigurationLocation)
+                    ? defaultConfigurationLocation
+                    : _fileSystemUtils.FileExists(cachedConfigurationLocation)
+                        ? cachedConfigurationLocation
+                        : null;
+
+            if (configurationPath is null)
+            {
+                _logger.Warning("Unable to locate the configuration file. The program will now exit");
+                return;
+            }
+
             var archives = _fileSystemUtils
                 .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
                 .Where(filePath =>
@@ -62,13 +81,18 @@ internal sealed class App : IApp
 
             if (!fileData.Any())
             {
-                _logger.Warning("Supplied configuration contains files to extract. The program will now exit");
+                _logger.Warning("Supplied configuration contains no files to extract. The program will now exit");
                 return;
             }
 
             _logger.Information("Starting file extraction");
             await _archiveExtractor.ExtractFiles(archives, destinationPath, fileData);
-            _logger.Information("File exctaction completed");
+            _logger.Information("File extraction completed");
+
+            if (options.CacheConfiguration && configurationPath != cachedConfigurationLocation)
+            {
+                _fileSystemUtils.Copy(configurationPath, cachedConfigurationLocation, true);
+            }
         }
         catch (Exception ex)
         {
