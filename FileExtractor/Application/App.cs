@@ -89,9 +89,9 @@ internal sealed class App : IApp
             await _archiveExtractor.ExtractFiles(archives, destinationPath, fileData);
             _logger.Information("File extraction completed");
 
-            if (options.CacheConfiguration)
+            if (options.CacheConfiguration && configurationPath != cachedConfigurationLocation)
             {
-                _fileSystemUtils.Copy(configurationPath, Path.Combine(baseDirectory, "configuration.csv"), true);
+                _fileSystemUtils.Copy(configurationPath, cachedConfigurationLocation, true);
             }
         }
         catch (Exception ex)
