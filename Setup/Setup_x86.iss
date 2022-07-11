@@ -1,6 +1,6 @@
 #preproc ispp
 
-#define FileExtractorAppName "file-extractor"
+#define FileExtractorAppName "File Extractor"
 #define FileExtractorAppVersion "1.0.0.0"
 #define FileExtractorAppPublisher "vhandziuk"
 #define FileExtractorAppExeName "FileExtractor.exe"
@@ -8,6 +8,9 @@
 [Code]
 #include 'Utils.pas'
 #include 'Dependencies.pas'
+
+[CustomMessages]
+NameAndVersion=%1 %2
 
 [Setup]
 #ifndef NoDependencies
@@ -58,6 +61,7 @@
 AppId={{D02E9EB9-BBB4-427B-B14D-0C85C8F1A929}
 AppName={#FileExtractorAppName}
 AppVersion={#FileExtractorAppVersion}
+AppVerName={cm:NameAndVersion,{#FileExtractorAppName},1.0.0.0}
 AppPublisher={#FileExtractorAppPublisher}
 ChangesEnvironment=yes
 DefaultDirName={autopf32}\{#FileExtractorAppName}
@@ -71,6 +75,7 @@ SolidCompression=yes
 WizardStyle=modern
 
 SetupIconFile=icon.ico
+UninstallDisplayIcon={app}\icon.ico
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
