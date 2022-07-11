@@ -7,13 +7,13 @@ function Set-Version {
     Set-Location -ErrorAction Stop -LiteralPath $PSScriptRoot
 
     try {
-        $isMatchSuccess = $ReleaseTag -Match '[vV](?<A>\d+)\.(?<B>\d+)(\.)?(?<C>\d+)?(\.)?(?<D>\d+)?'
-        $versionString = Join-String -InputObject @($Matches.A, $Matches.B, $Matches.C, $Matches.D) -Separator '.'
+        $isMatchSuccess = $ReleaseTag -Match '[vV](?<A>\d+)\.(?<B>\d+)(\.)?(?<C>\d+)?(\.)?'
+        $versionString = Join-String -InputObject @($Matches.A, $Matches.B, $Matches.C) -Separator '.'
 
         $major = $Matches.A
         $minor = $Matches.B
         $revision = If ($Matches.C) { $Matches.C } Else { '0' }
-        $build = If ($Matches.D) { $Matches.D } Else { '0' }
+        $build = $Env:GITHUB_RUN_NUMBER
 
         $fullVersionString = Join-String -InputObject @($major, $minor, $revision, $build) -Separator '.'
 
