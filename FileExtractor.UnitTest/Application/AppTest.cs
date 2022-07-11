@@ -1,12 +1,12 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using FileExtractor.Application;
 using FileExtractor.Common.Logging;
 using FileExtractor.Data;
 using FileExtractor.Utils.Compression;
 using FileExtractor.Utils.FileSystem;
 using Moq;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace FileExtractor.UnitTest.Application;
