@@ -26,29 +26,41 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     
+    - name: Set version
+      run: . .\Setup\SetVersion.ps1; Set-Version -ReleaseTag ${{ GITHUB_REF_NAME }}
+      shell: pwsh
+    
     - name: Restore dependencies
       run: dotnet restore
+      shell: pwsh
     
     - name: Build
       run: dotnet build --no-restore
+      shell: pwsh
     
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      shell: pwsh
             
     - name: Publish (x86)
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x86 --no-self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win-x86 --no-self-contained
+      shell: pwsh
     
     - name: Publish (x64)
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win10-x64 --no-self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win-x64 --no-self-contained
+      shell: pwsh
     
     - name: Download latest InnoSetup package
       run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
+      shell: pwsh
     
     - name: Pack (x86)
       run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x86.iss
+      shell: pwsh
 
     - name: Pack (x64)
       run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x64.iss
+      shell: pwsh
       
     - name: Create Release
       uses: ncipollo/release-action@v1.10.0
