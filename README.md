@@ -42,4 +42,19 @@ The first value is the name of the archive entry to be extracted (e.g., test1.tx
 
 The second value is a part of the relative sub-path of the entry in archive. If the entry is located in the archive root, the value should be left blank.
 
+´´´
+📦Archive
+ ┣ 📂Subfolder01
+ ┃ ┣ 📂Nested
+ ┃ ┃ ┣ 📜test05.txt
+ ┃ ┃ ┗ 📜test06.txt
+ ┃ ┣ 📜test03.txt
+ ┃ ┗ 📜test04.txt
+ ┣ 📂Subfolder02
+ ┃ ┣ 📜test07.txt
+ ┃ ┗ 📜test08.txt
+ ┣ 📜test01.txt
+ ┗ 📜test02.txt
+´´´
+
 ## Basic use
