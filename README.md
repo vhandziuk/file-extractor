@@ -38,6 +38,8 @@ Built with .NET 6.
 
 Configuration file must contain 2 values, separated by a comma.
 
-The first value is the name of the archive entry to be extracted (e.g., test1.txt). If the file is found in any of the archives in a specified path, it is then unpacked to the destination path. File name can optionally be prefixed by a relative path, e.g., Output\test1.txt. Then, the file will be unpacked to the respective sub-folder of the destination folder.
+The first value is the name of the archive entry to be extracted (e.g., test1.txt). If the file is found in any of the archives in a specified path, it is then unpacked to the destination path. File name can optionally be prefixed by a relative path, (e.g., Output\test1.txt). In this case, the file will be unpacked to the corresponding sub-folder of the destination path.
+
+The second value is a part of the relative sub-path of the entry in archive. If the entry is located in the archive root, the value should be left blank.
 
 ## Basic use
