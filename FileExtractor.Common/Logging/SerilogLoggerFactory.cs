@@ -14,7 +14,7 @@ internal static class SerilogLoggerFactory
     private const string FileOutputTemplate = $"{EventTimingAndLevel} [{{ProcessId}}] [{{ThreadId}}] [{{SourceContext}}] {{Message:lj}}{{NewLine}}{{Exception}}";
 
     private static readonly string _logFilePath = Path.Combine(
-        Environment.GetFolderPath(SpecialFolder.CommonApplicationData), "FileExtractor", "Application.log");
+        Environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", "Logs", "Application.log");
 
     private static readonly Lazy<Serilog.ILogger> _logger =
         new Lazy<Serilog.ILogger>(() =>
