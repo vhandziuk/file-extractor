@@ -3,11 +3,11 @@ using FileExtractor.Utils.Compression.Other;
 using FileExtractor.Utils.Compression.Rar;
 using FileExtractor.Utils.Compression.SevenZip;
 using FileExtractor.Utils.Compression.Zip;
-using FileExtractor.Utils.FileSystem;
 using StrongInject;
 
 namespace FileExtractor.Utils.DiRegistration;
 
+[Register(typeof(EnvironmentWrapper), Scope.SingleInstance, typeof(IEnvironment))]
 [Register(typeof(FileSystemUtils), Scope.SingleInstance, typeof(IFileSystemUtils))]
 [Register(typeof(ZipFileExtractor), Scope.SingleInstance, typeof(IZipFileExtractor))]
 [Register(typeof(ZipFileUtils), Scope.SingleInstance, typeof(IZipFileUtils))]

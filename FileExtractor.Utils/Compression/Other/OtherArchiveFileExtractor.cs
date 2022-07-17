@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
-using FileExtractor.Utils.FileSystem;
 using SharpCompress.Common;
 using SharpCompress.Readers;
 
