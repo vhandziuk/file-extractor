@@ -10,3 +10,6 @@ await Parser.Default
             await using var container = new Container();
             await container.RunAsync(async app => await app.RunAsync(options));
         });
+
+Console.Write("Press any key to continue...");
+Console.ReadKey();

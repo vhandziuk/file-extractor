@@ -5,6 +5,14 @@
 #define FileExtractorAppPublisher "vhandziuk"
 #define FileExtractorAppExeName "FileExtractor.exe"
 
+[Registry]
+Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor"; ValueType: string; ValueData: "File E&xtractor"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" -s ""%V"""
+Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: string; ValueData: "File E&xtractor"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "Directory\shell\File_Extractor\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" -s ""%V"""
+
 [Code]
 #include 'Utils.pas'
 #include 'Dependencies.pas'
@@ -92,8 +100,7 @@ Source: "NetRuntimeCheck\netcorecheck_x64.exe"; Flags: dontcopy noencryption
 #endif
 
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\FileExtractor\bin\release\net6.0\win-x64\publish\{#FileExtractorAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\FileExtractor\bin\release\net6.0\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\FileExtractor\bin\release\net6.0\win-x64\publish\*"; Excludes: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#FileExtractorAppName}"; Filename: "{app}\{#FileExtractorAppExeName}"
