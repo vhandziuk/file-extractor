@@ -15,7 +15,6 @@ namespace FileExtractor.UnitTest.Application;
 public class AppTest
 {
     private const string SomeCommonAppDataDirectory = @"C:\ProgramData";
-    private const string SomeAppBaseDirectory = @"C:\Program Files\File Extractor";
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
@@ -36,7 +35,6 @@ public class AppTest
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
 
         LetCommonAppDataDirectoryBe(SomeCommonAppDataDirectory);
-        LetAppBaseDirectoryBe(SomeAppBaseDirectory);
         LetDirectoryExist(SomeSourcePath);
         LetDirectoryExist(SomeDestinationPath);
         LetFileExist(SomeConfigurationPath);
@@ -47,6 +45,32 @@ public class AppTest
             _fileInfoProviderMock.Object,
             _archiveExtractorMock.Object,
             _loggerMock.Object);
+    }
+
+    [Fact]
+    public async Task RunAsync_SourcePathIsNotProvided_DoesNotExtractFiles()
+    {
+        SetupCommandLineOptions(sourcePath: null, SomeDestinationPath, SomeConfigurationPath, false);
+
+        await _sut.RunAsync(_commandLineOptions);
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Source path is not provided or does not exist. The program will now exit"));
+        _fileInfoProviderMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task RunAsync_SourcePathDoesNotExist_DoesNotExtractFiles()
+    {
+        LetDirectoryNotExist(SomeSourcePath);
+
+        await _sut.RunAsync(_commandLineOptions);
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Source path is not provided or does not exist. The program will now exit"));
+        _fileInfoProviderMock.VerifyNoOtherCalls();
+        _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -99,7 +123,7 @@ public class AppTest
         var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
         LetGetFilesReturn(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
-        LetCacheConfiguratinBe(cacheConfiguration);
+        LetCacheConfigurationBe(cacheConfiguration);
 
         await _sut.RunAsync(_commandLineOptions);
 
@@ -167,15 +191,15 @@ public class AppTest
             .Setup(environment => environment.GetFolderPath(SpecialFolder.CommonApplicationData))
             .Returns(path);
 
-    private void LetAppBaseDirectoryBe(string path) =>
-        _fileSystemUtilsMock
-            .Setup(utils => utils.GetAppBaseDirectory())
-            .Returns(path);
-
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock
             .Setup(utils => utils.DirectoryExists(path))
             .Returns(true);
+
+    private void LetDirectoryNotExist(string path) =>
+        _fileSystemUtilsMock
+            .Setup(utils => utils.DirectoryExists(path))
+            .Returns(false);
 
     private void LetFileExist(string filePath) =>
         _fileSystemUtilsMock
@@ -197,7 +221,7 @@ public class AppTest
             .Setup(provider => provider.EnumerateEntries(path))
             .Returns(entries);
 
-    private void LetCacheConfiguratinBe(bool cacheConfiguration) =>
+    private void LetCacheConfigurationBe(bool cacheConfiguration) =>
         _commandLineOptionsMock
             .Setup(options => options.CacheConfiguration)
             .Returns(cacheConfiguration);

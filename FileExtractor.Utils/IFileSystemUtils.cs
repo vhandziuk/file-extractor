@@ -7,5 +7,4 @@ public interface IFileSystemUtils
     bool FileExists(string path);
     string[] GetFiles(string path, string searchPattern, SearchOption searchOption);
     void Copy(string sourceFileName, string destFileName, bool overwrite);
-    string GetAppBaseDirectory();
 }

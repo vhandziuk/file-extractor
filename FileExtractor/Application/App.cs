@@ -42,17 +42,22 @@ internal sealed class App : IApp
 
     public async ValueTask RunAsync(ICommandLineOptions options)
     {
-        var baseDirectory = _fileSystemUtils.GetAppBaseDirectory();
-
-        var sourcePath = options.Source != null && _fileSystemUtils.DirectoryExists(options.Source)
-            ? options.Source
-            : baseDirectory;
-        var destinationPath = options.Destination != null && _fileSystemUtils.DirectoryExists(options.Destination)
-            ? options.Destination
-            : sourcePath;
-
         try
         {
+            var sourcePath = options.Source != null && _fileSystemUtils.DirectoryExists(options.Source)
+                ? options.Source
+                : null;
+
+            if (sourcePath == null)
+            {
+                _logger.Warning("Source path is not provided or does not exist. The program will now exit");
+                return;
+            }
+
+            var destinationPath = options.Destination != null && _fileSystemUtils.DirectoryExists(options.Destination)
+                ? options.Destination
+                : sourcePath;
+
             var defaultConfigurationLocation = Path.Combine(sourcePath, "configuration.csv");
             var cachedConfigurationLocation = Path.Combine(
         _environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", "configuration.csv");
@@ -64,7 +69,7 @@ internal sealed class App : IApp
                         ? cachedConfigurationLocation
                         : null;
 
-            if (configurationPath is null)
+            if (configurationPath == null)
             {
                 _logger.Warning("Unable to locate the configuration file. The program will now exit");
                 return;

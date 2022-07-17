@@ -52,6 +52,4 @@ public sealed class FileSystemUtils : IFileSystemUtils
             _logger.Error(ex, "Failed to copy file from {SourceFileName} to {DestFileName}", sourceFileName, destFileName);
         }
     }
-
-    public string GetAppBaseDirectory() => AppDomain.CurrentDomain.BaseDirectory;
 }
