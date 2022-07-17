@@ -4,20 +4,23 @@ using System.Threading.Tasks;
 using FileExtractor.Application;
 using FileExtractor.Common.Logging;
 using FileExtractor.Data;
+using FileExtractor.Utils;
 using FileExtractor.Utils.Compression;
-using FileExtractor.Utils.FileSystem;
 using Moq;
 using Xunit;
+using static System.Environment;
 
 namespace FileExtractor.UnitTest.Application;
 
 public class AppTest
 {
-    private const string SomeAppBaseDirectory = @"C:\Program Files\file-extractor";
+    private const string SomeCommonAppDataDirectory = @"C:\ProgramData";
+    private const string SomeAppBaseDirectory = @"C:\Program Files\File Extractor";
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
 
+    private readonly Mock<IEnvironment> _environmentMock = new();
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
@@ -32,12 +35,14 @@ public class AppTest
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
 
+        LetCommonAppDataDirectoryBe(SomeCommonAppDataDirectory);
         LetAppBaseDirectoryBe(SomeAppBaseDirectory);
         LetDirectoryExist(SomeSourcePath);
         LetDirectoryExist(SomeDestinationPath);
         LetFileExist(SomeConfigurationPath);
 
         _sut = new App(
+            _environmentMock.Object,
             _fileSystemUtilsMock.Object,
             _fileInfoProviderMock.Object,
             _archiveExtractorMock.Object,
@@ -49,7 +54,7 @@ public class AppTest
     {
         LetFileNotExist(SomeConfigurationPath);
         LetFileNotExist(Path.Combine(SomeSourcePath, "configuration.csv"));
-        LetFileNotExist(Path.Combine(SomeAppBaseDirectory, "configuration.csv"));
+        LetFileNotExist(Path.Combine(SomeCommonAppDataDirectory, "File Extractor", "configuration.csv"));
 
         await _sut.RunAsync(_commandLineOptions);
 
@@ -104,7 +109,7 @@ public class AppTest
             extractor.ExtractFiles(archives, SomeDestinationPath, fileData), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Information("File extraction completed"));
-        _fileSystemUtilsMock.Verify(utils => utils.Copy(SomeConfigurationPath, Path.Combine(SomeAppBaseDirectory, "configuration.csv"), true), cacheConfiguration ? Times.Once() : Times.Never());
+        _fileSystemUtilsMock.Verify(utils => utils.Copy(SomeConfigurationPath, Path.Combine(SomeCommonAppDataDirectory, "File Extractor", "configuration.csv"), true), cacheConfiguration ? Times.Once() : Times.Never());
     }
 
     [Fact]
@@ -156,6 +161,11 @@ public class AppTest
             .Setup(options => options.CacheConfiguration)
             .Returns(cacheConfiguration);
     }
+
+    private void LetCommonAppDataDirectoryBe(string path) =>
+        _environmentMock
+            .Setup(environment => environment.GetFolderPath(SpecialFolder.CommonApplicationData))
+            .Returns(path);
 
     private void LetAppBaseDirectoryBe(string path) =>
         _fileSystemUtilsMock

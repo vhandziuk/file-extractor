@@ -1,4 +1,4 @@
-namespace FileExtractor.Utils.FileSystem;
+namespace FileExtractor.Utils;
 
 public interface IFileSystemUtils
 {

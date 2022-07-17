@@ -7,7 +7,6 @@ using FileExtractor.Common.Threading;
 using FileExtractor.Data;
 using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.Compression.Rar;
-using FileExtractor.Utils.FileSystem;
 using Moq;
 using Xunit;
 

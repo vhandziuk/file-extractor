@@ -1,7 +1,6 @@
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Utils.Compression.Common;
-using FileExtractor.Utils.FileSystem;
 
 namespace FileExtractor.Utils.Compression.Rar;
 

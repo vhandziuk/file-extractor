@@ -1,7 +1,8 @@
 using FileExtractor.Common.Logging;
 using FileExtractor.Data;
+using FileExtractor.Utils;
 using FileExtractor.Utils.Compression;
-using FileExtractor.Utils.FileSystem;
+using static System.Environment;
 
 namespace FileExtractor.Application;
 
@@ -19,17 +20,20 @@ internal sealed class App : IApp
         ".xz"
     };
 
+    private readonly IEnvironment _environment;
     private readonly IFileSystemUtils _fileSystemUtils;
     private readonly ICsvFileInfoProvider _fileInfoProvider;
     private readonly IArchiveExtractor _archiveExtractor;
     private readonly ILogger<App> _logger;
 
     public App(
+        IEnvironment environment,
         IFileSystemUtils fileSystemUtils,
         ICsvFileInfoProvider fileInfoProvider,
         IArchiveExtractor archiveExtractor,
         ILogger<App> logger)
     {
+        _environment = environment;
         _fileSystemUtils = fileSystemUtils;
         _fileInfoProvider = fileInfoProvider;
         _archiveExtractor = archiveExtractor;
@@ -50,7 +54,8 @@ internal sealed class App : IApp
         try
         {
             var defaultConfigurationLocation = Path.Combine(sourcePath, "configuration.csv");
-            var cachedConfigurationLocation = Path.Combine(baseDirectory, "configuration.csv");
+            var cachedConfigurationLocation = Path.Combine(
+        _environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", "configuration.csv");
             var configurationPath = options.Configuration != null && _fileSystemUtils.FileExists(options.Configuration)
                 ? options.Configuration
                 : _fileSystemUtils.FileExists(defaultConfigurationLocation)

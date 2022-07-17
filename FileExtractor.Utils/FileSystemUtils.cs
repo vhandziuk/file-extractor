@@ -1,6 +1,6 @@
 using FileExtractor.Common.Logging;
 
-namespace FileExtractor.Utils.FileSystem;
+namespace FileExtractor.Utils;
 
 public sealed class FileSystemUtils : IFileSystemUtils
 {
