@@ -57,15 +57,14 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
             .GroupBy(entry => entry.Directory)
             .ToDictionary(group => group.Key, group => group.ToDictionary(entry => entry.Name));
 
-        var extractedPath = GetExtractedPath(outputPath);
-        if (!_fileSystemUtils.DirectoryExists(extractedPath))
-            _fileSystemUtils.CreateDirectory(extractedPath);
+        if (!_fileSystemUtils.DirectoryExists(outputPath))
+            _fileSystemUtils.CreateDirectory(outputPath);
 
         var extractedFiles = new ConcurrentBag<FileInfoData>();
 
         foreach (var pair in data)
         {
-            var destinationPath = Path.Combine(extractedPath, pair.Key);
+            var destinationPath = Path.Combine(outputPath, pair.Key);
             if (!_fileSystemUtils.DirectoryExists(destinationPath))
                 _fileSystemUtils.CreateDirectory(destinationPath);
 
@@ -97,9 +96,4 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
         && (string.IsNullOrEmpty(data[entry.Name].Location)
             ? true
             : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].Location, StringComparison.OrdinalIgnoreCase)) == true;
-
-    private static string GetExtractedPath(string outputPath) =>
-        outputPath.EndsWith(value: "Extracted", StringComparison.OrdinalIgnoreCase)
-            ? outputPath
-            : Path.Combine(outputPath, "Extracted");
 }
