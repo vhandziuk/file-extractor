@@ -90,9 +90,7 @@ The application accepts following command line arguments:
 
 `-s` or `--source` /mandatory/ — is the full path to the directory containing archived files. If the argument is not provided or provided directory does not exist, the application will print a warning message and exit.
 
-`-d` or `--destination` /optional/ — is the full path to the output directory (where extracted files will be placed). If the argument is not provided, the default output location will be set to `<source>\Extracted`. 
-
-**_NOTE:_** The extracted files will always be placed to the `Extracted` subfolder of the destination directory.
+`-d` or `--destination` /optional/ — is the full path to the output directory (where extracted files will be placed). If the argument is not provided, the default output location will be the same as `<source>`.
 
 `-c` or `--configuration` /optional/ — is the full path to the configuration `.csv` file. If the argument is not provided, the default `<source>\configuration.csv` path is assumed. If the configuration file does not exist, the application will try to look for the cached `configuration.csv` file under `%programdata%\File Extractor` (see `--cache-configuration` below). If both the configuration file and cached configuration are not available, the application will print a warning message and exit.
 
