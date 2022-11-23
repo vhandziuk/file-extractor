@@ -6,4 +6,5 @@ internal interface ICommandLineOptions
     string Source { get; }
     string Destination { get; }
     bool CacheConfiguration { get; }
+    bool NoWait { get; }
 }
