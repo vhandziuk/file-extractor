@@ -13,5 +13,7 @@ internal sealed class CommandLineOptions : ICommandLineOptions
     public string Destination { get; set; }
     [Option("cache-configuration", Required = false, HelpText = "Save current configuration as default")]
     public bool CacheConfiguration { get; set; }
+    [Option("no-wait", Required = false, HelpText = "Do not wait for a key press to exit the app")]
+    public bool NoWait { get; set; }
 #pragma warning restore 8618
 }
