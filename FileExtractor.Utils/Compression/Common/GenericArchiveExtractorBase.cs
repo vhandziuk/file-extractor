@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.IO.Enumeration;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
@@ -60,7 +60,7 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
         if (!_fileSystemUtils.DirectoryExists(outputPath))
             _fileSystemUtils.CreateDirectory(outputPath);
 
-        var extractedFiles = new ConcurrentBag<FileInfoData>();
+        var extractedFiles = new HashSet<FileInfoData>();
 
         foreach (var pair in data)
         {
@@ -68,22 +68,23 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
             if (!_fileSystemUtils.DirectoryExists(destinationPath))
                 _fileSystemUtils.CreateDirectory(destinationPath);
 
-            foreach (var archiveEntry in archiveEntries.AsParallel())
+            foreach (var (fileInfo, matchingEntries) in GetMatchingEntries(archiveEntries, pair.Value))
             {
-                if (!TryGetMatchingEntry(archiveEntry, pair.Value, out var fileInfo))
-                    continue;
+                matchingEntries.ForEach(
+                    entry =>
+                    {
+                        var extractedFilePath = Path.Combine(destinationPath, entry.Name);
 
-                var extractedFilePath = Path.Combine(destinationPath, fileInfo.Name);
+                        if (_fileSystemUtils.FileExists(extractedFilePath))
+                        {
+                            _logger.Warning("File {File} already exists in {Path}. Skipping extraction", entry.Name, destinationPath);
+                            return;
+                        }
 
-                if (_fileSystemUtils.FileExists(extractedFilePath))
-                {
-                    _logger.Warning("File {File} already exists in {Path}. Skipping extraction", fileInfo.Name, destinationPath);
-                    extractedFiles.Add(fileInfo);
-                    continue;
-                }
-
-                _logger.Information("Extracting {File} to {Path}", fileInfo.Name, destinationPath);
-                archiveEntry.ExtractToFile(extractedFilePath, overwrite: true);
+                        _logger.Information("Extracting {File} to {Path}", entry.Name, destinationPath);
+                        entry.ExtractToFile(extractedFilePath, overwrite: true);
+                    }
+                );
                 extractedFiles.Add(fileInfo);
             }
         }
@@ -91,9 +92,22 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
         return extractedFiles;
     }
 
-    private static bool TryGetMatchingEntry(IGenericArchiveEntry entry, Dictionary<string, FileInfoData> data, out FileInfoData fileInfo) =>
-        data.TryGetValue(entry.Name, out fileInfo)
-        && (string.IsNullOrEmpty(data[entry.Name].Location)
-            ? true
-            : Path.GetDirectoryName(entry.FullName)?.EndsWith(data[entry.Name].Location, StringComparison.OrdinalIgnoreCase)) == true;
+    private static IEnumerable<(FileInfoData, List<IGenericArchiveEntry>)> GetMatchingEntries(IEnumerable<IGenericArchiveEntry> entries, Dictionary<string, FileInfoData> data)
+    {
+        foreach (var pair in data)
+        {
+            var matchingEntries = entries
+                .Where(entry =>
+                    FileSystemName.MatchesSimpleExpression(pair.Key, entry.Name)
+                    && (string.IsNullOrWhiteSpace(pair.Value.Location)
+                        ? string.IsNullOrWhiteSpace(Path.GetDirectoryName(entry.FullName))
+                        : Path.GetDirectoryName(entry.FullName)?.EndsWith(pair.Value.Location, StringComparison.OrdinalIgnoreCase) == true))
+                .ToList();
+
+            if (!matchingEntries.Any())
+                continue;
+
+            yield return (pair.Value, matchingEntries);
+        }
+    }
 }
