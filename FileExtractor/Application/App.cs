@@ -8,17 +8,7 @@ namespace FileExtractor.Application;
 
 internal sealed class App : IApp
 {
-    private readonly string[] _supportedArchiveExtensions =
-    {
-        ".zip",
-        ".rar",
-        ".7z",
-        ".tar",
-        ".bz2",
-        ".gz",
-        ".lz",
-        ".xz"
-    };
+    private static readonly HashSet<string> SupportedArchiveExtensions = new() { ".zip", ".rar", ".7z", ".tar", ".bz2", ".gz", ".lz", ".xz" };
 
     private readonly IEnvironment _environment;
     private readonly IFileSystemUtils _fileSystemUtils;
@@ -78,7 +68,7 @@ internal sealed class App : IApp
             var archives = _fileSystemUtils
                 .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
                 .Where(filePath =>
-                    _supportedArchiveExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase));
+                    SupportedArchiveExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase));
 
             if (!archives.Any())
             {
