@@ -2,7 +2,7 @@ namespace FileExtractor.Data;
 
 public sealed class CsvFileInfoProvider : ICsvFileInfoProvider
 {
-    private static readonly HashSet<int> AllowedColumnCounts = new() { 1, 2, 3 };
+    private const int RequiredColumnCount = 3;
 
     public IEnumerable<FileInfoData> EnumerateEntries(string filePath)
     {
@@ -12,17 +12,17 @@ public sealed class CsvFileInfoProvider : ICsvFileInfoProvider
         while (reader.ReadLine() is string line)
         {
             var data = line.Split(',');
-            if (!AllowedColumnCounts.Contains(data.Length))
+            if (data.Length != RequiredColumnCount)
             {
                 throw new Exception(
                     "Malformed configuration file. " +
-                    "Data must contain 1, 2, or 3 columns containing [required] file name, [optional] extraction" +
-                    "subfolder, and [optional] archive path (subfolder in which the file is located)");
+                    "Data must contain 3 columns containing file name, " +
+                    "extraction subfolder, and path in the archive");
             }
 
             var name = data[0];
-            var directory = data.ElementAtOrDefault(1) ?? string.Empty;
-            var location = data.ElementAtOrDefault(2) ?? string.Empty;
+            var directory = data[1];
+            var location = data[2];
 
             if (string.IsNullOrWhiteSpace(name))
             {
