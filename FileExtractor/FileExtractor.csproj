@@ -1,13 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
-
   <PropertyGroup>
     <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
@@ -15,24 +13,19 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
   </PropertyGroup>
-	
   <ItemGroup>
     <Compile Include="..\GlobalAssemblyInfo.cs" Link="GlobalAssemblyInfo.cs" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="icon.ico" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="StrongInject" Version="1.4.4" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\FileExtractor.Data\FileExtractor.Data.csproj" />
     <ProjectReference Include="..\FileExtractor.Common\FileExtractor.Common.csproj" />
     <ProjectReference Include="..\FileExtractor.Utils\FileExtractor.Utils.csproj" />
   </ItemGroup>
-
 </Project>

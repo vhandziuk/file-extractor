@@ -1,19 +1,19 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor", "FileExtractor\FileExtractor.csproj", "{9F2B028E-DA74-4673-AED6-7B91FDE4BBC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor", "FileExtractor\FileExtractor.csproj", "{9F2B028E-DA74-4673-AED6-7B91FDE4BBC7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Data", "FileExtractor.Data\FileExtractor.Data.csproj", "{E769FA56-FE88-407A-84F3-C4E08FCA08DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Data", "FileExtractor.Data\FileExtractor.Data.csproj", "{E769FA56-FE88-407A-84F3-C4E08FCA08DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Common", "FileExtractor.Common\FileExtractor.Common.csproj", "{CB8C437F-50C8-4D00-99AE-8F8921BE773C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Common", "FileExtractor.Common\FileExtractor.Common.csproj", "{CB8C437F-50C8-4D00-99AE-8F8921BE773C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Utils", "FileExtractor.Utils\FileExtractor.Utils.csproj", "{79A47133-327C-435C-B3E8-575A56E5B4C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Utils", "FileExtractor.Utils\FileExtractor.Utils.csproj", "{79A47133-327C-435C-B3E8-575A56E5B4C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.Utils.UnitTest", "FileExtractor.Utils.UnitTest\FileExtractor.Utils.UnitTest.csproj", "{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Utils.UnitTest", "FileExtractor.Utils.UnitTest\FileExtractor.Utils.UnitTest.csproj", "{ABF861B2-067E-4E3D-A435-A5D8B0E1B90D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileExtractor.UnitTest", "FileExtractor.UnitTest\FileExtractor.UnitTest.csproj", "{CE2F12CA-C67C-4348-853B-E522C5A80A6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.UnitTest", "FileExtractor.UnitTest\FileExtractor.UnitTest.csproj", "{CE2F12CA-C67C-4348-853B-E522C5A80A6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
