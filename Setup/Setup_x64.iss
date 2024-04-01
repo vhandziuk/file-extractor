@@ -40,9 +40,12 @@ NameAndVersion=%1 %2
 ;   #define UseDotNet50
 ;   #define UseDotNet50Asp
 ;   #define UseDotNet50Desktop
-   #define UseDotNet60
+;   #define UseDotNet60
 ;   #define UseDotNet60Asp
-;  #define UseDotNet60Desktop
+;   #define UseDotNet60Desktop
+    #define UseDotNet80
+;   #define UseDotNet80Asp
+;   #define UseDotNet80Desktop
 #endif
 
 ; #define UseVC2005
@@ -100,7 +103,7 @@ Source: "NetRuntimeCheck\netcorecheck_x64.exe"; Flags: dontcopy noencryption
 #endif
 
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\FileExtractor\bin\release\net6.0\win-x64\publish\*"; Excludes: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\FileExtractor\bin\release\net8.0\win-x64\publish\*"; Excludes: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#FileExtractorAppName}"; Filename: "{app}\{#FileExtractorAppExeName}"
@@ -169,6 +172,15 @@ begin
 #endif
 #ifdef UseDotNet60Desktop
   Dependency_AddDotNet60Desktop;
+#endif
+#ifdef UseDotNet80
+  Dependency_AddDotNet80;
+#endif
+#ifdef UseDotNet80Asp
+  Dependency_AddDotNet80Asp;
+#endif
+#ifdef UseDotNet80Desktop
+  Dependency_AddDotNet80Desktop;
 #endif
 
 #ifdef UseVC2005

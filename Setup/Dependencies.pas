@@ -370,11 +370,11 @@ end;
 procedure Dependency_AddDotNet60;
 begin
   // https://dotnet.microsoft.com/download/dotnet/6.0
-  if not Dependency_IsNetCoreInstalled('Microsoft.NETCore.App 6.0.20') then begin
+  if not Dependency_IsNetCoreInstalled('Microsoft.NETCore.App 6.0.28') then begin
     Dependency_Add('dotnet60' + Dependency_ArchSuffix + '.exe',
       '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
-      '.NET Runtime 6.0.20' + Dependency_ArchTitle,
-      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/3be5ee3a-c171-4cd2-ab98-00ca5c11eb8c/6fd31294b0c6c670ab5c060592935203/dotnet-runtime-6.0.20-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/3cfb6d2a-afbe-4ae7-8e5b-776f350654cc/6e8d858a60fe15381f3c84d8ca66c4a7/dotnet-runtime-6.0.20-win-x64.exe'),
+      '.NET Runtime 6.0.28' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/267211b8-f876-4e97-b98c-6014a5c83b50/2c6630fe03f63e581c98302e5ac144fc/dotnet-runtime-6.0.28-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/fb0630a0-d5e7-43a6-92eb-1e114de80a5b/a43563f0a5c6ca71005d8ffe5de1bd88/dotnet-runtime-6.0.28-win-x64.exe'),
       '', False, False);
   end;
 end;
@@ -382,11 +382,11 @@ end;
 procedure Dependency_AddDotNet60Asp;
 begin
   // https://dotnet.microsoft.com/download/dotnet/6.0
-  if not Dependency_IsNetCoreInstalled('Microsoft.AspNetCore.App 6.0.20') then begin
+  if not Dependency_IsNetCoreInstalled('Microsoft.AspNetCore.App 6.0.28') then begin
     Dependency_Add('dotnet60asp' + Dependency_ArchSuffix + '.exe',
       '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
-      'ASP.NET Core Runtime 6.0.20' + Dependency_ArchTitle,
-      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/0e37c76c-53b4-4eea-8f5c-6ad2f8d5fe3c/88a8620329ced1aee271992a5b56d236/aspnetcore-runtime-6.0.20-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/be9f67fd-60af-45b1-9bca-a7bcc0e86e7e/6a750f7d7432937b3999bb4c5325062a/aspnetcore-runtime-6.0.20-win-x64.exe'),
+      'ASP.NET Core Runtime 6.0.28' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/43a8bb70-5f8b-4219-95f1-8a3af65ac047/23bc7729e74089ee0edb0bf08f71bb37/aspnetcore-runtime-6.0.28-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/c7e44967-9522-4567-9f23-d92452cb25d4/89b32234f3dc50b2c1e215439dd98866/aspnetcore-runtime-6.0.28-win-x64.exe'),
       '', False, False);
   end;
 end;
@@ -394,11 +394,47 @@ end;
 procedure Dependency_AddDotNet60Desktop;
 begin
   // https://dotnet.microsoft.com/download/dotnet/6.0
-  if not Dependency_IsNetCoreInstalled('Microsoft.WindowsDesktop.App 6.0.20') then begin
+  if not Dependency_IsNetCoreInstalled('Microsoft.WindowsDesktop.App 6.0.28') then begin
     Dependency_Add('dotnet60desktop' + Dependency_ArchSuffix + '.exe',
       '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
-      '.NET Desktop Runtime 6.0.20' + Dependency_ArchTitle,
-      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/0413b619-3eb2-4178-a78e-8d1aafab1a01/5247f08ea3c13849b68074a2142fbf31/windowsdesktop-runtime-6.0.20-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/1146f414-17c7-4184-8b10-1addfa5315e4/39db5573efb029130add485566320d74/windowsdesktop-runtime-6.0.20-win-x64.exe'),
+      '.NET Desktop Runtime 6.0.28' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/6e38e5c8-1fad-47d6-8863-bef8a6806148/255e17a4ef55bc157392e713cc7aff82/windowsdesktop-runtime-6.0.28-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/3f02cb28-18d2-41d8-a5e3-411aac7b7e5d/69fb6f7f450993f326ead2575ab783d0/windowsdesktop-runtime-6.0.28-win-x64.exe'),
+      '', False, False);
+  end;
+end;
+
+procedure Dependency_AddDotNet80;
+begin
+  // https://dotnet.microsoft.com/download/dotnet/8.0
+  if not Dependency_IsNetCoreInstalled('Microsoft.NETCore.App 8.0.3') then begin
+    Dependency_Add('dotnet80' + Dependency_ArchSuffix + '.exe',
+      '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
+      '.NET Runtime 8.0.3' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/c8d7a77c-5647-4e38-9ed8-edf82328497d/56130e071ac13c3660b0f3a0d60914c7/dotnet-runtime-8.0.3-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/961dfc84-ea72-48a2-b3f4-b82cefc34580/6ac50b6bf244a2c5481ad705a92cf843/dotnet-runtime-8.0.3-win-x64.exe'),
+      '', False, False);
+  end;
+end;
+
+procedure Dependency_AddDotNet80Asp;
+begin
+  // https://dotnet.microsoft.com/download/dotnet/8.0
+  if not Dependency_IsNetCoreInstalled('Microsoft.AspNetCore.App 8.0.3') then begin
+    Dependency_Add('dotnet80asp' + Dependency_ArchSuffix + '.exe',
+      '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
+      'ASP.NET Core Runtime 8.0.3' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/6e92e2d6-32bb-4ff7-9424-78cd278076e8/7b23ff0e6bb04586ad90a0289b31d8d5/aspnetcore-runtime-8.0.3-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/e91876a9-1760-42cb-a6f4-97c57e9cca52/b433fcf4768929539f17e1908cb315bf/aspnetcore-runtime-8.0.3-win-x64.exe'),
+      '', False, False);
+  end;
+end;
+
+procedure Dependency_AddDotNet80Desktop;
+begin
+  // https://dotnet.microsoft.com/download/dotnet/8.0
+  if not Dependency_IsNetCoreInstalled('Microsoft.WindowsDesktop.App 8.0.3') then begin
+    Dependency_Add('dotnet80desktop' + Dependency_ArchSuffix + '.exe',
+      '/lcid ' + IntToStr(GetUILanguage) + ' /passive /norestart',
+      '.NET Desktop Runtime 8.0.3' + Dependency_ArchTitle,
+      Dependency_String('https://download.visualstudio.microsoft.com/download/pr/c629f243-5125-4751-a5ff-e78fa45646b1/85777e3e3f58f863d884fd4b8a1453f2/windowsdesktop-runtime-8.0.3-win-x86.exe', 'https://download.visualstudio.microsoft.com/download/pr/51bc18ac-0594-412d-bd63-18ece4c91ac4/90b47b97c3bfe40a833791b166697e67/windowsdesktop-runtime-8.0.3-win-x64.exe'),
       '', False, False);
   end;
 end;

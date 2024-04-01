@@ -10,7 +10,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/FileExtractor/bin/Debug/net6.0/FileExtractor.dll",
+      "program": "${workspaceFolder}/FileExtractor/bin/Debug/net8.0/FileExtractor.dll",
       "args": [],
       "cwd": "${workspaceFolder}/FileExtractor",
       // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

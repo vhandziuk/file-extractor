@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     
     - name: Setup NuGet.exe
       uses: NuGet/setup-nuget@v1.0.6
@@ -43,23 +43,23 @@ jobs:
       shell: pwsh
             
     - name: Publish (x86)
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win-x86 --no-self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net8.0 --runtime win-x86 --no-self-contained
       shell: pwsh
     
     - name: Publish (x64)
-      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net6.0 --runtime win-x64 --no-self-contained
+      run: dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net8.0 --runtime win-x64 --no-self-contained
       shell: pwsh
     
     - name: Download latest InnoSetup package
-      run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.1
+      run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.2
       shell: pwsh
     
     - name: Pack (x86)
-      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x86.iss
+      run: .\Tools.InnoSetup.6.2.2\tools\iscc.exe /Qp .\Setup\Setup_x86.iss
       shell: pwsh
 
     - name: Pack (x64)
-      run: .\Tools.InnoSetup.6.2.1\tools\iscc.exe /Qp .\Setup\Setup_x64.iss
+      run: .\Tools.InnoSetup.6.2.2\tools\iscc.exe /Qp .\Setup\Setup_x64.iss
       shell: pwsh
       
     - name: Create Release
