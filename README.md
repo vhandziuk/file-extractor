@@ -1,5 +1,7 @@
 # File Extractor
 
+[![Build and test](https://github.com/vhandziuk/file-extractor/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/vhandziuk/file-extractor/actions/workflows/build-and-test.yml)
+
 Command line utility for selective unpacking of archived files.
 
 ## Description
