@@ -10,7 +10,7 @@ Supported archive types: **Zip, Rar, 7z, Tar, Bz2, Gz, Lz, Xz**
 
 **_NOTE:_** The tool does not support password-protected archives.
 
-**_NOTE:_** The application is built with .NET 6. The respective .NET runtime (if missing) will be deployed as a prerequisite by the application installer.
+**_NOTE:_** The application is built with .NET 8. The respective .NET runtime (if missing) will be deployed as a prerequisite by the application installer.
 
 ## Configuration file structure
 
