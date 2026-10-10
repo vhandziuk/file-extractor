@@ -60,7 +60,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
     if CurStep = ssInstall then
     begin
-        EnvAddPath(ExpandConstant('{app}'));
+        AddDirectoryToSystemPath(ExpandConstant('{app}'));
     end;
 end;
 
@@ -68,7 +68,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
     if CurUninstallStep = usPostUninstall then
     begin
-        EnvRemovePath(ExpandConstant('{app}'));
+        RemoveDirectoryFromSystemPath(ExpandConstant('{app}'));
     end;
 end;
 

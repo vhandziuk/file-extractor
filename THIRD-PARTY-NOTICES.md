@@ -24,7 +24,6 @@ These NuGet packages are shipped with File Extractor (application binaries and i
 | Component | Location | Copyright / Author | License | Source |
 |---|---|---|---|---|
 | Inno Setup Dependency Installer | `Setup/CodeDependencies.iss` | Copyright (c) 2009-2026 DomGries | [MIT](#mit-license) | https://github.com/DomGries/InnoDependencyInstaller (commit `4f0d02526c772a5da51a14345f11cdd3a89bd0de`) |
-| PATH environment variable helpers (`EnvAddPath`, `EnvRemovePath`) | `Setup/Utils.pas` | Wojciech Mleczek | [CC BY-SA 3.0](#creative-commons-attribution-sharealike-30) | https://stackoverflow.com/a/46609047 (modified: comments removed) |
 
 ## Build tools
 
@@ -259,10 +258,3 @@ Serilog.Sinks.Console and Serilog.Sinks.File.
 
    END OF TERMS AND CONDITIONS
 ```
-
-### Creative Commons Attribution-ShareAlike 3.0
-
-Applies to the PATH environment variable helpers in `Setup/Utils.pas`, adapted from
-the StackOverflow answer by Wojciech Mleczek (https://stackoverflow.com/a/46609047).
-Contributions to StackOverflow are licensed under CC BY-SA; this answer was posted
-under version 3.0. Full license text: https://creativecommons.org/licenses/by-sa/3.0/legalcode
