@@ -9,6 +9,11 @@ namespace FileExtractor.Utils.Compression;
 public sealed record ExtractionSettings(string OutputPath, IReadOnlyList<FileInfoData> Files, int MaxDegreeOfParallelism)
 {
     /// <summary>
+    /// Entries matching any of these files are not extracted, even when they match <see cref="Files"/>.
+    /// </summary>
+    public IReadOnlyList<FileInfoData> ExcludedFiles { get; init; } = [];
+
+    /// <summary>
     /// Whether files may be written through symbolic links or junctions below <see cref="OutputPath"/>.
     /// </summary>
     public bool FollowSymbolicLinks { get; init; }

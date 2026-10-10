@@ -12,6 +12,8 @@ public sealed class ExtractionContext(ExtractionSettings settings) : IExtraction
 
     public IReadOnlyList<FileInfoData> Files => settings.Files;
 
+    public IReadOnlyList<FileInfoData> ExcludedFiles => settings.ExcludedFiles;
+
     public bool FollowSymbolicLinks => settings.FollowSymbolicLinks;
 
     public bool PreserveEntryPaths => settings.PreserveEntryPaths;

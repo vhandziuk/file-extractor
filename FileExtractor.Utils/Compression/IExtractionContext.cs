@@ -12,6 +12,11 @@ public interface IExtractionContext
     IReadOnlyList<FileInfoData> Files { get; }
 
     /// <summary>
+    /// Entries matching any of these files are not extracted, even when they match <see cref="Files"/>.
+    /// </summary>
+    IReadOnlyList<FileInfoData> ExcludedFiles { get; }
+
+    /// <summary>
     /// Whether files may be written through symbolic links or junctions below <see cref="OutputPath"/>.
     /// </summary>
     bool FollowSymbolicLinks { get; }

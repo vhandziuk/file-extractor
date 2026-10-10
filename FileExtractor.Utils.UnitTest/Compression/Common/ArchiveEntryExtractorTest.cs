@@ -43,6 +43,7 @@ public class ArchiveEntryExtractorTest
             .Setup(validator => validator.IsContained(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
         LetConfiguredFilesBe();
+        LetExcludedFilesBe();
 
         _sut = new ArchiveEntryExtractor(
             _archiveEntryMatcherMock.Object,
@@ -347,6 +348,43 @@ public class ArchiveEntryExtractorTest
     }
 
     [Fact]
+    public void ExtractEntries_EntryMatchesExclusion_DoesNotExtractEntry()
+    {
+        var excludedEntryMock = GetMockedGenericArchiveEntry("SomeName.tmp", "SomeName.tmp");
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "SomeName.dat");
+        var fileInfo = new FileInfoData("", "*", "");
+        var exclusion = new FileInfoData("", "*.tmp", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetExcludedFilesBe(exclusion);
+        LetEntryMatch(excludedEntryMock, fileInfo, exclusion);
+        LetEntryMatch(entryMock, fileInfo);
+
+        var result = ExtractEntries(excludedEntryMock.Object, entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        excludedEntryMock.Verify(entry =>
+            entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_OnlyEntryMatchesExclusion_ReportsNoFiles()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.tmp", "SomeName.tmp");
+        var fileInfo = new FileInfoData("", "*", "");
+        var exclusion = new FileInfoData("", "*.tmp", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetExcludedFilesBe(exclusion);
+        LetEntryMatch(entryMock, fileInfo, exclusion);
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Fact]
     public void ExtractEntries_EntryDoesNotMatch_DoesNotValidateEntryName()
     {
         var entryMock = GetMockedGenericArchiveEntry("", "SomeDirectory/");
@@ -572,6 +610,11 @@ public class ArchiveEntryExtractorTest
     private void LetConfiguredFilesBe(params FileInfoData[] files) =>
         _contextMock
             .SetupGet(context => context.Files)
+            .Returns(files);
+
+    private void LetExcludedFilesBe(params FileInfoData[] files) =>
+        _contextMock
+            .SetupGet(context => context.ExcludedFiles)
             .Returns(files);
 
     private void LetEntryMatch(Mock<IGenericArchiveEntry> entryMock, params FileInfoData[] files)

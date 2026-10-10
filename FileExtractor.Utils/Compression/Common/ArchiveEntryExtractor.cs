@@ -66,8 +66,8 @@ public sealed class ArchiveEntryExtractor(
         var matchingFiles = context.Files
             .Where(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName))
             .ToArray();
-        if (matchingFiles.Length == 0)
-            return matchingFiles;
+        if (matchingFiles.Length == 0 || IsExcluded(entry, context))
+            return [];
 
         // The archive is untrusted: a name such as "..\file.dll", stored by a non-Windows zip tool,
         // would otherwise be written outside the destination folder.
@@ -105,6 +105,10 @@ public sealed class ArchiveEntryExtractor(
 
         return [.. extractedFiles];
     }
+
+    // An excluded entry is skipped silently and its matching rows stay unextracted, like an entry that does not match.
+    private bool IsExcluded(IGenericArchiveEntry entry, IExtractionContext context) =>
+        context.ExcludedFiles.Any(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName));
 
     // The folders inside the archive, without the "." and empty segments that tar archives often store
     // ("./docs/file.txt"), so equal destinations get equal paths. They come from the untrusted archive

@@ -20,6 +20,17 @@ public class ExtractionContextTest
     {
         Assert.Equal(SomeOutputPath, _sut.OutputPath);
         Assert.Same(SomeFiles, _sut.Files);
+        Assert.Empty(_sut.ExcludedFiles);
+    }
+
+    [Fact]
+    public void Constructor_ExcludedFilesProvided_ExposesThem()
+    {
+        FileInfoData[] someExcludedFiles = [new("", "*.tmp", "")];
+
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { ExcludedFiles = someExcludedFiles });
+
+        Assert.Same(someExcludedFiles, context.ExcludedFiles);
     }
 
     [Theory]
