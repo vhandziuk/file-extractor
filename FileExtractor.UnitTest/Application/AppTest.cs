@@ -14,6 +14,7 @@ namespace FileExtractor.UnitTest.Application;
 public class AppTest
 {
     private readonly Mock<IConfigurationCommand> _configurationCommandMock = new();
+    private readonly Mock<IExtractCommand> _extractCommandMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
     private readonly Mock<IConfigurationOptions> _configurationOptionsMock = new();
 
@@ -23,6 +24,7 @@ public class AppTest
     {
         _sut = new App(
             _configurationCommandMock.Object,
+            _extractCommandMock.Object,
             _loggerMock.Object);
     }
 
@@ -35,6 +37,20 @@ public class AppTest
 
         _configurationCommandMock.Verify(command =>
             command.RunAsync(_configurationOptionsMock.Object, cancellationTokenSource.Token), Times.Once);
+        _extractCommandMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task RunAsync_ExtractOptionsProvided_RunsExtractCommand()
+    {
+        var extractOptions = Mock.Of<IExtractOptions>();
+        using var cancellationTokenSource = new CancellationTokenSource();
+
+        await _sut.RunAsync(extractOptions, cancellationTokenSource.Token);
+
+        _extractCommandMock.Verify(command =>
+            command.RunAsync(extractOptions, cancellationTokenSource.Token), Times.Once);
+        _configurationCommandMock.VerifyNoOtherCalls();
     }
 
     [Fact]

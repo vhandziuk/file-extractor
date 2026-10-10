@@ -4,5 +4,7 @@ public sealed class EnvironmentWrapper : IEnvironment
 {
     public int ProcessorCount => Environment.ProcessorCount;
 
+    public string CurrentDirectory => Environment.CurrentDirectory;
+
     public string GetFolderPath(Environment.SpecialFolder folder) => Environment.GetFolderPath(folder);
 }
