@@ -1,8 +1,10 @@
 using CommandLine;
 
-namespace FileExtractor.Application;
+namespace FileExtractor.Application.Options;
 
-internal sealed class CommandLineOptions : ICommandLineOptions
+// The default verb keeps "fileextractor -s <folder>", used by the folder context menu and existing scripts, working.
+[Verb("config", isDefault: true, HelpText = "Extract the files listed in a CSV configuration from the archives in a folder")]
+internal sealed class ConfigurationOptions : ExtractionOptionsBase, IConfigurationOptions
 {
     [Option('c', "configuration", Required = false, HelpText = "Path to a CSV configuration file")]
     public string? Configuration { get; set; }
@@ -14,10 +16,4 @@ internal sealed class CommandLineOptions : ICommandLineOptions
     public bool Recursive { get; set; }
     [Option("cache-configuration", Required = false, HelpText = "Save current configuration as default")]
     public bool CacheConfiguration { get; set; }
-    [Option("no-wait", Required = false, HelpText = "Do not wait for a key press to exit the app")]
-    public bool NoWait { get; set; }
-    [Option('p', "max-parallelism", Required = false, HelpText = "Maximum number of archives extracted in parallel (default: number of processors)")]
-    public int? MaxParallelism { get; set; }
-    [Option("follow-symlinks", Required = false, HelpText = "Extract files into folders below the destination that are symbolic links or junctions")]
-    public bool FollowSymbolicLinks { get; set; }
 }

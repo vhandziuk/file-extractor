@@ -1,5 +1,5 @@
 using CommandLine;
-using FileExtractor.Application;
+using FileExtractor.Application.Options;
 using FileExtractor.Common.Security;
 using FileExtractor.DiRegistration;
 
@@ -9,8 +9,8 @@ if (OperatingSystem.IsWindows())
     new DllSearchPathHardener().Harden();
 
 await Parser.Default
-    .ParseArguments<CommandLineOptions>(args)
-    .WithParsedAsync(
+    .ParseArguments(args, typeof(ConfigurationOptions))
+    .WithParsedAsync<ICommonOptions>(
         async options =>
         {
             // not disposed: the Ctrl+C handler may still fire while the process shuts down
