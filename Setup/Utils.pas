@@ -1,3 +1,8 @@
+// Adds/removes the application directory to/from the system PATH variable
+// Source: https://stackoverflow.com/a/46609047 by Wojciech Mleczek
+// Licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/), see THIRD-PARTY-NOTICES.md
+// Modified: comments removed
+
 const EnvironmentKey = 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
 
 procedure EnvAddPath(Path: string);

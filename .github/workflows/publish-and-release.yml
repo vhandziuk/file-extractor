@@ -51,15 +51,15 @@ jobs:
       shell: pwsh
     
     - name: Download latest InnoSetup package
-      run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 6.2.2
+      run: nuget install Tools.InnoSetup -DependencyVersion Highest -Version 7.1.0
       shell: pwsh
     
     - name: Pack (x86)
-      run: .\Tools.InnoSetup.6.2.2\tools\iscc.exe /Qp .\Setup\Setup_x86.iss
+      run: .\Tools.InnoSetup.7.1.0\tools\ISCC.exe /Qp .\Setup\Setup_x86.iss
       shell: pwsh
 
     - name: Pack (x64)
-      run: .\Tools.InnoSetup.6.2.2\tools\iscc.exe /Qp .\Setup\Setup_x64.iss
+      run: .\Tools.InnoSetup.7.1.0\tools\ISCC.exe /Qp .\Setup\Setup_x64.iss
       shell: pwsh
       
     - name: Create Release
