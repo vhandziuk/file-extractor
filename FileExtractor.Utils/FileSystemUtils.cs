@@ -67,4 +67,17 @@ public sealed class FileSystemUtils : IFileSystemUtils
     }
 
     public void DeleteFile(string path) => File.Delete(path);
+
+    // GetAttributes does not follow links, so a link to a missing target is detected as well
+    public bool IsReparsePoint(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint);
+        }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+        {
+            return false;
+        }
+    }
 }

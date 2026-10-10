@@ -1,6 +1,12 @@
 using CommandLine;
 using FileExtractor.Application;
+using FileExtractor.Common.Security;
 using FileExtractor.DiRegistration;
+
+// before anything loads a native DLL: the current folder (often the one with the processed archives)
+// must not be searched for DLLs
+if (OperatingSystem.IsWindows())
+    new DllSearchPathHardener().Harden();
 
 await Parser.Default
     .ParseArguments<CommandLineOptions>(args)

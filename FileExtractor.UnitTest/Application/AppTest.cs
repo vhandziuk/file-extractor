@@ -16,14 +16,14 @@ namespace FileExtractor.UnitTest.Application;
 
 public class AppTest
 {
-    private const string SomeCommonAppDataDirectory = @"C:\ProgramData";
+    private const string SomeLocalAppDataDirectory = @"C:\Users\SomeUser\AppData\Local";
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
     private const string SomeOtherConfigurationPath = @"C:\Config\custom.csv";
     private const int SomeProcessorCount = 8;
 
-    private static readonly string CachedConfigurationDirectory = Path.Combine(SomeCommonAppDataDirectory, "File Extractor");
+    private static readonly string CachedConfigurationDirectory = Path.Combine(SomeLocalAppDataDirectory, "File Extractor");
     private static readonly string CachedConfigurationPath = Path.Combine(CachedConfigurationDirectory, "configuration.csv");
 
     private readonly Mock<IEnvironment> _environmentMock = new();
@@ -31,6 +31,7 @@ public class AppTest
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
     private readonly Mock<IArchiveTypeResolver> _archiveTypeResolverMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
+    private readonly Mock<IReparsePointGuard> _reparsePointGuardMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
     private readonly Mock<ICommandLineOptions> _commandLineOptionsMock = new();
 
@@ -42,7 +43,7 @@ public class AppTest
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
 
-        LetCommonAppDataDirectoryBe(SomeCommonAppDataDirectory);
+        LetLocalAppDataDirectoryBe(SomeLocalAppDataDirectory);
         LetProcessorCountBe(SomeProcessorCount);
         LetArchiveExtensionBeSupported(".zip");
         LetDirectoryExist(SomeSourcePath);
@@ -55,6 +56,7 @@ public class AppTest
             _fileInfoProviderMock.Object,
             _archiveTypeResolverMock.Object,
             _archiveExtractorMock.Object,
+            _reparsePointGuardMock.Object,
             _loggerMock.Object);
     }
 
@@ -370,6 +372,26 @@ public class AppTest
     }
 
     [Fact]
+    public async Task RunAsync_CachedConfigurationPathContainsReparsePoint_DoesNotCacheConfiguration()
+    {
+        LetCacheConfigurationBe(true);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+        _reparsePointGuardMock
+            .Setup(guard => guard.ContainsReparsePoint(SomeLocalAppDataDirectory, CachedConfigurationPath))
+            .Returns(true);
+
+        await RunAsync();
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Cached configuration path {Path} contains a symbolic link or junction. The configuration is not cached", CachedConfigurationPath), Times.Once);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.CreateDirectory(It.IsAny<string>()), Times.Never);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    [Fact]
     public async Task RunAsync_UsedConfigurationIsCachedConfiguration_DoesNotCopyConfiguration()
     {
         var cachedConfigurationPathInOtherCase = CachedConfigurationPath.ToUpperInvariant();
@@ -444,9 +466,9 @@ public class AppTest
             .Returns(cacheConfiguration);
     }
 
-    private void LetCommonAppDataDirectoryBe(string path) =>
+    private void LetLocalAppDataDirectoryBe(string path) =>
         _environmentMock
-            .Setup(environment => environment.GetFolderPath(SpecialFolder.CommonApplicationData))
+            .Setup(environment => environment.GetFolderPath(SpecialFolder.LocalApplicationData))
             .Returns(path);
 
     private void LetProcessorCountBe(int processorCount) =>
