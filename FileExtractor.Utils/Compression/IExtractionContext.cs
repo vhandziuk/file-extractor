@@ -22,6 +22,11 @@ public interface IExtractionContext
     bool PreserveEntryPaths { get; }
 
     /// <summary>
+    /// Whether each archive is extracted into a folder below <see cref="OutputPath"/> named after the archive.
+    /// </summary>
+    bool UseArchiveFolders { get; }
+
+    /// <summary>
     /// Reserves a destination file for the caller. Returns <see langword="false"/> when another
     /// archive entry already claimed the same path, so every destination file has exactly one writer
     /// even when archives are extracted in parallel. Safe to call from multiple threads.

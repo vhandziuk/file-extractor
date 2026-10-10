@@ -22,6 +22,9 @@ public sealed class ArchiveEntryExtractor(
         IExtractionContext context,
         CancellationToken cancellationToken)
     {
+        if (!TryGetArchiveOutputPath(archiveFile, context, out var archiveOutputPath))
+            return [];
+
         var extractedFiles = new HashSet<FileInfoData>();
         var entryCount = 0;
 
@@ -29,7 +32,7 @@ public sealed class ArchiveEntryExtractor(
         {
             cancellationToken.ThrowIfCancellationRequested();
             entryCount++;
-            extractedFiles.UnionWith(ExtractEntry(entry, context));
+            extractedFiles.UnionWith(ExtractEntry(entry, archiveOutputPath, context));
         }
 
         if (entryCount == 0)
@@ -38,7 +41,27 @@ public sealed class ArchiveEntryExtractor(
         return extractedFiles;
     }
 
-    private FileInfoData[] ExtractEntry(IGenericArchiveEntry entry, IExtractionContext context)
+    // With archive folders, each archive is extracted into a folder named after it, so entries with the same
+    // name in different archives do not collide. The folder stays below the output path, where the
+    // containment and link checks of every destination start.
+    private bool TryGetArchiveOutputPath(string archiveFile, IExtractionContext context, out string archiveOutputPath)
+    {
+        archiveOutputPath = context.OutputPath;
+        if (!context.UseArchiveFolders)
+            return true;
+
+        var folderName = Path.GetFileNameWithoutExtension(archiveFile);
+        if (!pathValidator.IsValidFileName(folderName))
+        {
+            logger.Warning("Archive {Archive} cannot be extracted to a folder named {Folder}. Skipping it", archiveFile, folderName);
+            return false;
+        }
+
+        archiveOutputPath = Path.Combine(context.OutputPath, folderName);
+        return true;
+    }
+
+    private FileInfoData[] ExtractEntry(IGenericArchiveEntry entry, string archiveOutputPath, IExtractionContext context)
     {
         var matchingFiles = context.Files
             .Where(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName))
@@ -64,7 +87,7 @@ public sealed class ArchiveEntryExtractor(
         // Several configuration rows (e.g. a name and a wildcard) can match the same entry and folder;
         // the entry is written to each distinct folder once.
         var destinations = matchingFiles
-            .GroupBy(fileInfo => Path.Combine(context.OutputPath, fileInfo.Directory, entryDirectory), StringComparer.OrdinalIgnoreCase);
+            .GroupBy(fileInfo => Path.Combine(archiveOutputPath, fileInfo.Directory, entryDirectory), StringComparer.OrdinalIgnoreCase);
 
         var extractedFiles = new List<FileInfoData>();
         string extractedFilePath = null;

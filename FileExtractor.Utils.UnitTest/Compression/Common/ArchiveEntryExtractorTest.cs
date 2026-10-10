@@ -310,6 +310,43 @@ public class ArchiveEntryExtractorTest
     }
 
     [Fact]
+    public void ExtractEntries_ArchiveFoldersAreUsed_ExtractsEntryToFolderNamedAfterArchive()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "Root/SomeName.dat");
+        var fileInfo = new FileInfoData("Test", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        LetArchiveFoldersBeUsed();
+        var expectedFilePath = Path.Combine(SomeOutputPath, "SomeArchive", "Test", "Root", "SomeName.dat");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        entryMock.Verify(entry => entry.ExtractToFile(expectedFilePath, false), Times.Once);
+        _pathValidatorMock.Verify(validator => validator.IsContained(SomeOutputPath, expectedFilePath), Times.Once);
+        _reparsePointGuardMock.Verify(guard => guard.ContainsReparsePoint(SomeOutputPath, expectedFilePath), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_ArchiveFolderNameIsUnsafe_SkipsArchive()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "SomeName.dat");
+        var fileInfo = new FileInfoData("", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetArchiveFoldersBeUsed();
+        LetFileNameBeUnsafe("SomeArchive");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Archive {Archive} cannot be extracted to a folder named {Folder}. Skipping it", SomeArchiveFileName, "SomeArchive"), Times.Once);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Fact]
     public void ExtractEntries_EntryDoesNotMatch_DoesNotValidateEntryName()
     {
         var entryMock = GetMockedGenericArchiveEntry("", "SomeDirectory/");
@@ -586,6 +623,11 @@ public class ArchiveEntryExtractorTest
     private void LetEntryPathsBePreserved() =>
         _contextMock
             .SetupGet(context => context.PreserveEntryPaths)
+            .Returns(true);
+
+    private void LetArchiveFoldersBeUsed() =>
+        _contextMock
+            .SetupGet(context => context.UseArchiveFolders)
             .Returns(true);
 
     private void VerifyNothingWritten(Mock<IGenericArchiveEntry> entryMock)

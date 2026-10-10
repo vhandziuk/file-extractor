@@ -42,6 +42,16 @@ public class ExtractionContextTest
         Assert.Equal(preserveEntryPaths, context.PreserveEntryPaths);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_UseArchiveFoldersProvided_ExposesIt(bool useArchiveFolders)
+    {
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { UseArchiveFolders = useArchiveFolders });
+
+        Assert.Equal(useArchiveFolders, context.UseArchiveFolders);
+    }
+
     [Fact]
     public void TryClaimFilePath_PathIsNotClaimed_ReturnsTrue()
     {

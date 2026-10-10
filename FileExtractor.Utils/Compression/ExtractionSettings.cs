@@ -17,4 +17,9 @@ public sealed record ExtractionSettings(string OutputPath, IReadOnlyList<FileInf
     /// Whether the folders of an entry inside the archive are recreated below the destination folder.
     /// </summary>
     public bool PreserveEntryPaths { get; init; }
+
+    /// <summary>
+    /// Whether each archive is extracted into a folder below <see cref="OutputPath"/> named after the archive.
+    /// </summary>
+    public bool UseArchiveFolders { get; init; }
 }

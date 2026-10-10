@@ -16,5 +16,7 @@ public sealed class ExtractionContext(ExtractionSettings settings) : IExtraction
 
     public bool PreserveEntryPaths => settings.PreserveEntryPaths;
 
+    public bool UseArchiveFolders => settings.UseArchiveFolders;
+
     public bool TryClaimFilePath(string path) => _claimedFilePaths.TryAdd(path, 0);
 }
