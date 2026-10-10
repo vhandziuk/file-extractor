@@ -71,8 +71,8 @@ The tool can be used from command line or `powershell`. The first argument selec
 
 | Verb | Alias | Description |
 | --- | --- | --- |
-| `extract` | `x` | Extract files from archives named on the command line. This is the default verb and can be omitted. |
-| `config` | | Extract the files listed in a CSV configuration from the archives in a folder. |
+| `extract` | `e` | Extract files from archives named on the command line. This is the default verb and can be omitted. |
+| `config` | `c` | Extract the files listed in a CSV configuration from the archives in a folder. |
 | `list` | `l` | List the files in archives without extracting them. |
 
 ``` powershell
@@ -81,7 +81,7 @@ The tool can be used from command line or `powershell`. The first argument selec
   fileextractor list "<archive>" [-r] [--no-wait]
 ```
 
-**_NOTE:_** In earlier versions, the configuration mode was the default (`fileextractor -s "<source>" -d "<destination>" -p <count>`). It now needs the `config` verb, takes the source directory as its first argument, and uses the same option names as `extract`: `fileextractor config "<source>" -o "<output>" -j <count>`. An archive named exactly like a verb (for example, `list`) needs the explicit `x` verb: `fileextractor x list`.
+**_NOTE:_** In earlier versions, the configuration mode was the default (`fileextractor -s "<source>" -d "<destination>" -p <count>`). It now needs the `config` verb, takes the source directory as its first argument, and uses the same option names as `extract`: `fileextractor config "<source>" -o "<output>" -j <count>`. An archive named exactly like a verb or alias (for example, `list` or `c`) needs the explicit `e` verb: `fileextractor e list`.
 
 The help screen and application version can be displayed with the following commands:
 
@@ -97,14 +97,14 @@ Pressing `Ctrl+C` stops the extraction after the files currently being written; 
 
 | Right-click on | Entry | Runs |
 | --- | --- | --- |
-| A supported archive | File Extractor: Extract here | `fileextractor x "<archive>" -o "<folder of the archive>"` |
+| A supported archive | File Extractor: Extract here | `fileextractor e "<archive>" -o "<folder of the archive>"` |
 | A supported archive | File Extractor: Extract to subfolder | the same with `--archive-folder`, so the files go to a subfolder named after the archive |
-| A folder or the background of a folder | File Extractor: Extract archives here | `fileextractor x "<folder>" -o "<folder>"`: every archive located directly in the folder, into that folder |
+| A folder or the background of a folder | File Extractor: Extract archives here | `fileextractor e "<folder>" -o "<folder>"`: every archive located directly in the folder, into that folder |
 | A folder or the background of a folder | File Extractor: Extract using configuration | `fileextractor config "<folder>"`, with the default `<output>` and `<configuration>` |
 
 **_NOTE:_** The tool generates log files under `%localappdata%\File Extractor\Logs` of the current user. The files can be used to check extended application output and error messages.
 
-### Extracting with a configuration file (`config`)
+### Extracting with a configuration file (`config`, `c`)
 
 ``` powershell
   fileextractor config "<source>" [-c "<configuration>"] [-o "<output>"] [-r] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
@@ -146,13 +146,13 @@ The verb accepts following command line arguments:
 
 `--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
 
-### Extracting files named on the command line (`extract`, `x`)
+### Extracting files named on the command line (`extract`, `e`)
 
 ``` powershell
   fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-j <count>] [--follow-symlinks] [--no-wait]
 ```
 
-This is the default verb, so `extract` (or its alias `x`) can be omitted. The verb accepts following command line arguments:
+This is the default verb, so `extract` (or its alias `e`) can be omitted. The verb accepts following command line arguments:
 
 ```
   archive (pos. 0)         Required. Archive file, folder with archives, or wildcard path such as C:\Archives\*.zip
@@ -184,7 +184,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
 `-x` or `--exclude` /optional/ — is a comma-separated list of files that must not be extracted, each in the same format as `<file>` (for example, `-x "*.tmp,*.log"`). Spaces around the commas are ignored, and a pattern cannot contain a comma. The option can be placed anywhere on the command line.
 
-`--flat` /optional/ — when provided, all files are written directly into `<output>`. By default, the folders of the archive are recreated below `<output>`, like `unzip` and `7z x` do. With `--flat`, a file with the same name as an already extracted one is skipped with a warning.
+`--flat` /optional/ — when provided, all files are written directly into `<output>`. By default, the folders of the archive are recreated below `<output>`, like `unzip` and `7z x` do (unlike `7z e`, the `e` alias keeps the folders as well). With `--flat`, a file with the same name as an already extracted one is skipped with a warning.
 
 `--archive-folder` /optional/ — when provided, each archive is extracted into a subdirectory of `<output>` named after the archive without its extension (for example, `<output>\Backup` for `Backup.zip`), so archives that contain files with the same names do not collide.
 
@@ -197,10 +197,10 @@ Examples:
   fileextractor "C:\Downloads\package.zip"
 
   # extract the text files of the docs folder and all DLLs from every 7z archive in a folder
-  fileextractor x "C:\Archives\*.7z" "docs/*.txt" "*.dll" -o "C:\Output"
+  fileextractor e "C:\Archives\*.7z" "docs/*.txt" "*.dll" -o "C:\Output"
 
   # extract all files except temporary ones, one subdirectory per archive, without the archive folders
-  fileextractor x "C:\Archives" -o "C:\Output" --archive-folder --flat -x "*.tmp,*.log"
+  fileextractor e "C:\Archives" -o "C:\Output" --archive-folder --flat -x "*.tmp,*.log"
 ```
 
 ### Listing archive contents (`list`, `l`)

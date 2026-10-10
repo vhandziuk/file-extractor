@@ -3,7 +3,7 @@ using CommandLine.Text;
 
 namespace FileExtractor.Application.Options;
 
-[Verb("config", HelpText = "Extract the files listed in a CSV configuration from the archives in a folder")]
+[Verb("config", aliases: ["c"], HelpText = "Extract the files listed in a CSV configuration from the archives in a folder")]
 internal sealed class ConfigurationOptions : ExtractionOptionsBase, IConfigurationOptions
 {
     [Value(0, MetaName = "source", Required = true, HelpText = "Path to the source directory with the archives")]

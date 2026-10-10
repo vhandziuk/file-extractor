@@ -19,16 +19,16 @@ Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: none; Flags: de
 #sub RegisterArchiveVerbs
 Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere"; ValueType: string; ValueData: "File Extractor: Extract here"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%1"" -o ""%1\.."""
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" e ""%1"" -o ""%1\.."""
 Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder"; ValueType: string; ValueData: "File Extractor: Extract to subfolder"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%1"" -o ""%1\.."" --archive-folder"
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" e ""%1"" -o ""%1\.."" --archive-folder"
 #endsub
 
 #sub RegisterFolderVerbs
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere"; ValueType: string; ValueData: "File Extractor: Extract archives here"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%V"" -o ""%V"""
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" e ""%V"" -o ""%V"""
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueData: "File Extractor: Extract using configuration"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" config ""%V"""

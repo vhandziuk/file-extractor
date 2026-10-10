@@ -8,10 +8,12 @@ public class ConfigurationOptionsTest
 {
     private readonly Parser _parser = new(settings => settings.HelpWriter = null);
 
-    [Fact]
-    public void ParseArguments_ConfigVerbGiven_ParsesConfigurationOptions()
+    [Theory]
+    [InlineData("config")]
+    [InlineData("c")]
+    public void ParseArguments_VerbOrAliasGiven_ParsesConfigurationOptions(string verb)
     {
-        var result = ParseArguments("config", @"C:\Source", "-c", @"C:\Config\custom.csv", "-o", @"C:\Output", "-r");
+        var result = ParseArguments(verb, @"C:\Source", "-c", @"C:\Config\custom.csv", "-o", @"C:\Output", "-r");
 
         var options = Assert.IsType<ConfigurationOptions>(Assert.IsType<Parsed<object>>(result).Value);
         Assert.Equal(@"C:\Source", options.Source);
