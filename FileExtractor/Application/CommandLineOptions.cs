@@ -10,6 +10,8 @@ internal sealed class CommandLineOptions : ICommandLineOptions
     public string? Source { get; set; }
     [Option('d', "destination", Required = false, HelpText = "Path to the destination directory")]
     public string? Destination { get; set; }
+    [Option('r', "recursive", Required = false, HelpText = "Search for archives in subdirectories of the source directory as well")]
+    public bool Recursive { get; set; }
     [Option("cache-configuration", Required = false, HelpText = "Save current configuration as default")]
     public bool CacheConfiguration { get; set; }
     [Option("no-wait", Required = false, HelpText = "Do not wait for a key press to exit the app")]

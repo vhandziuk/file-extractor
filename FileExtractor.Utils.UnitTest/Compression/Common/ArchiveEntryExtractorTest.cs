@@ -16,6 +16,7 @@ public class ArchiveEntryExtractorTest
     private const string SomeArchiveFileName = @"C:\SomeArchive.zip";
     private const string SomeOutputPath = @"C:\Output";
 
+    private readonly Mock<IArchiveEntryMatcher> _archiveEntryMatcherMock = new();
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<IExtractionContext> _contextMock = new();
     private readonly Mock<ILogger<ArchiveEntryExtractor>> _loggerMock = new();
@@ -33,6 +34,7 @@ public class ArchiveEntryExtractorTest
         LetConfiguredFilesBe();
 
         _sut = new ArchiveEntryExtractor(
+            _archiveEntryMatcherMock.Object,
             _fileSystemUtilsMock.Object,
             _loggerMock.Object);
     }
@@ -55,6 +57,7 @@ public class ArchiveEntryExtractorTest
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
         var fileInfo = new FileInfoData("Test", "SomeName.dat", "SomeDirectory");
         LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
 
         var result = ExtractEntries(entryMock.Object);
 
@@ -71,7 +74,9 @@ public class ArchiveEntryExtractorTest
     public void ExtractEntries_DirectoryIsEmpty_ExtractsEntryToOutputPath()
     {
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
-        LetConfiguredFilesBe(new FileInfoData("", "SomeName.dat", "SomeDirectory"));
+        var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
 
         ExtractEntries(entryMock.Object);
 
@@ -81,17 +86,18 @@ public class ArchiveEntryExtractorTest
             entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName.dat"), true), Times.Once);
     }
 
-    [Theory]
-    [InlineData("SomeOtherName.dat", @"SomeDirectory\SomeOtherName.dat")]
-    [InlineData("SomeName.dat", @"SomeOtherDirectory\SomeName.dat")]
-    public void ExtractEntries_EntryDoesNotMatch_DoesNotExtractEntry(string entryName, string entryFullName)
+    [Fact]
+    public void ExtractEntries_EntryDoesNotMatch_DoesNotExtractEntry()
     {
-        var entryMock = GetMockedGenericArchiveEntry(entryName, entryFullName);
-        LetConfiguredFilesBe(new FileInfoData("", "SomeName.dat", "SomeDirectory"));
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
+        var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo);
 
         var result = ExtractEntries(entryMock.Object);
 
         Assert.Empty(result);
+        _archiveEntryMatcherMock.Verify(matcher =>
+            matcher.IsMatch(fileInfo, "SomeName.dat", @"SomeDirectory\SomeName.dat"), Times.Once);
         entryMock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
         _fileSystemUtilsMock.Verify(utils =>
@@ -99,13 +105,15 @@ public class ArchiveEntryExtractorTest
     }
 
     [Fact]
-    public void ExtractEntries_FileNameContainsWildcards_ExtractsMatchingEntries()
+    public void ExtractEntries_SomeEntriesMatch_ExtractsOnlyMatchingEntries()
     {
         var entry1Mock = GetMockedGenericArchiveEntry("SomeName1.dat", @"SomeDirectory\SomeName1.dat");
-        var entry2Mock = GetMockedGenericArchiveEntry("SomeName2.dat", @"SomeDirectory\Nested\SomeName2.dat");
-        var entry3Mock = GetMockedGenericArchiveEntry("SomeName3.txt", @"SomeDirectory\SomeName3.txt");
+        var entry2Mock = GetMockedGenericArchiveEntry("SomeName2.txt", @"SomeDirectory\SomeName2.txt");
+        var entry3Mock = GetMockedGenericArchiveEntry("SomeName3.dat", @"SomeDirectory\Nested\SomeName3.dat");
         var fileInfo = new FileInfoData("", "SomeName?.dat", "");
         LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entry1Mock, fileInfo);
+        LetEntryMatch(entry3Mock, fileInfo);
 
         var result = ExtractEntries(entry1Mock.Object, entry2Mock.Object, entry3Mock.Object);
 
@@ -113,18 +121,19 @@ public class ArchiveEntryExtractorTest
         entry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName1.dat"), true), Times.Once);
         entry2Mock.Verify(entry =>
-            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName2.dat"), true), Times.Once);
-        entry3Mock.Verify(entry =>
             entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        entry3Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName3.dat"), true), Times.Once);
     }
 
     [Fact]
     public void ExtractEntries_EntryMatchesMultipleDestinations_ExtractsEntryOnceAndCopiesIt()
     {
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
-        LetConfiguredFilesBe(
-            new FileInfoData("Test1", "SomeName.dat", "SomeDirectory"),
-            new FileInfoData("Test2", "*.dat", "SomeDirectory"));
+        var fileInfo1 = new FileInfoData("Test1", "SomeName.dat", "SomeDirectory");
+        var fileInfo2 = new FileInfoData("Test2", "*.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo1, fileInfo2);
+        LetEntryMatch(entryMock, fileInfo1, fileInfo2);
 
         ExtractEntries(entryMock.Object);
 
@@ -146,6 +155,7 @@ public class ArchiveEntryExtractorTest
         var fileInfo1 = new FileInfoData("Test", "SomeName.dat", "SomeDirectory");
         var fileInfo2 = new FileInfoData("Test", "*.dat", "");
         LetConfiguredFilesBe(fileInfo1, fileInfo2);
+        LetEntryMatch(entryMock, fileInfo1, fileInfo2);
 
         var result = ExtractEntries(entryMock.Object);
 
@@ -163,13 +173,15 @@ public class ArchiveEntryExtractorTest
     {
         var entry1Mock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory1\SomeName.dat");
         var entry2Mock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory2\SomeName.dat");
-        LetConfiguredFilesBe(
-            new FileInfoData("Test1", "SomeName.dat", "SomeDirectory1"),
-            new FileInfoData("Test2", "SomeName.dat", "SomeDirectory2"));
+        var fileInfo1 = new FileInfoData("Test1", "SomeName.dat", "SomeDirectory1");
+        var fileInfo2 = new FileInfoData("Test2", "SomeName.dat", "SomeDirectory2");
+        LetConfiguredFilesBe(fileInfo1, fileInfo2);
+        LetEntryMatch(entry1Mock, fileInfo1);
+        LetEntryMatch(entry2Mock, fileInfo2);
 
         var result = ExtractEntries(entry1Mock.Object, entry2Mock.Object);
 
-        Assert.Equal(2, result.Count);
+        Assert.Equivalent(new[] { fileInfo1, fileInfo2 }, result);
         entry1Mock.Verify(entry =>
             entry.ExtractToFile(Path.Combine(SomeOutputPath, "Test1", "SomeName.dat"), true), Times.Once);
         entry2Mock.Verify(entry =>
@@ -182,6 +194,7 @@ public class ArchiveEntryExtractorTest
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
         var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
         LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
         LetFileExist(Path.Combine(SomeOutputPath, "SomeName.dat"));
 
         var result = ExtractEntries(entryMock.Object);
@@ -197,7 +210,9 @@ public class ArchiveEntryExtractorTest
     public void ExtractEntries_FilePathAlreadyClaimed_SkipsExtraction()
     {
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
-        LetConfiguredFilesBe(new FileInfoData("", "SomeName.dat", "SomeDirectory"));
+        var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
         LetFilePathBeClaimed(Path.Combine(SomeOutputPath, "SomeName.dat"));
 
         ExtractEntries(entryMock.Object);
@@ -216,7 +231,9 @@ public class ArchiveEntryExtractorTest
         entryMock
             .Setup(entry => entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()))
             .Throws(expectedException);
-        LetConfiguredFilesBe(new FileInfoData("", "SomeName.dat", "SomeDirectory"));
+        var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
 
         var exception = Assert.Throws<IOException>(() => ExtractEntries(entryMock.Object));
 
@@ -230,9 +247,10 @@ public class ArchiveEntryExtractorTest
     {
         var expectedException = new IOException();
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
-        LetConfiguredFilesBe(
-            new FileInfoData("Test1", "SomeName.dat", "SomeDirectory"),
-            new FileInfoData("Test2", "SomeName.dat", "SomeDirectory"));
+        var fileInfo1 = new FileInfoData("Test1", "SomeName.dat", "SomeDirectory");
+        var fileInfo2 = new FileInfoData("Test2", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo1, fileInfo2);
+        LetEntryMatch(entryMock, fileInfo1, fileInfo2);
         _fileSystemUtilsMock
             .Setup(utils => utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()))
             .Throws(expectedException);
@@ -258,7 +276,9 @@ public class ArchiveEntryExtractorTest
         _fileSystemUtilsMock
             .Setup(utils => utils.DeleteFile(It.IsAny<string>()))
             .Throws(deleteException);
-        LetConfiguredFilesBe(new FileInfoData("", "SomeName.dat", "SomeDirectory"));
+        var fileInfo = new FileInfoData("", "SomeName.dat", "SomeDirectory");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
 
         var exception = Assert.Throws<IOException>(() => ExtractEntries(entryMock.Object));
 
@@ -276,7 +296,10 @@ public class ArchiveEntryExtractorTest
         entry1Mock
             .Setup(entry => entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()))
             .Callback(cancellationTokenSource.Cancel);
-        LetConfiguredFilesBe(new FileInfoData("", "*.dat", ""));
+        var fileInfo = new FileInfoData("", "*.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entry1Mock, fileInfo);
+        LetEntryMatch(entry2Mock, fileInfo);
 
         Assert.Throws<OperationCanceledException>(() =>
             _sut.ExtractEntries(SomeArchiveFileName, [entry1Mock.Object, entry2Mock.Object], _contextMock.Object, cancellationTokenSource.Token));
@@ -303,6 +326,17 @@ public class ArchiveEntryExtractorTest
         _contextMock
             .SetupGet(context => context.Files)
             .Returns(files);
+
+    private void LetEntryMatch(Mock<IGenericArchiveEntry> entryMock, params FileInfoData[] files)
+    {
+        var entry = entryMock.Object;
+        foreach (var fileInfo in files)
+        {
+            _archiveEntryMatcherMock
+                .Setup(matcher => matcher.IsMatch(fileInfo, entry.Name, entry.FullName))
+                .Returns(true);
+        }
+    }
 
     private void LetFilePathBeClaimed(string path) =>
         _contextMock

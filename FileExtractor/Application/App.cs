@@ -48,7 +48,7 @@ internal sealed class App(
             return;
         }
 
-        var archives = FindArchives(sourcePath);
+        var archives = FindArchives(sourcePath, options.Recursive);
         if (archives.Length == 0)
         {
             logger.Warning("Source directory contains no supported archive files. The program will now exit");
@@ -89,9 +89,9 @@ internal sealed class App(
         return candidatePaths.FirstOrDefault(path => path is not null && fileSystemUtils.FileExists(path));
     }
 
-    private string[] FindArchives(string sourcePath) =>
+    private string[] FindArchives(string sourcePath, bool recursive) =>
         fileSystemUtils
-            .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
+            .GetFiles(sourcePath, "*.*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
             .Where(filePath => archiveTypeResolver.TryResolve(filePath, out _))
             .ToArray();
 

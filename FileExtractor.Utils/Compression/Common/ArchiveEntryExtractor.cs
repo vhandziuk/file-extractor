@@ -4,6 +4,7 @@ using FileExtractor.Data;
 namespace FileExtractor.Utils.Compression.Common;
 
 public sealed class ArchiveEntryExtractor(
+    IArchiveEntryMatcher archiveEntryMatcher,
     IFileSystemUtils fileSystemUtils,
     ILogger<ArchiveEntryExtractor> logger) : IArchiveEntryExtractor
 {
@@ -32,7 +33,7 @@ public sealed class ArchiveEntryExtractor(
     private FileInfoData[] ExtractEntry(IGenericArchiveEntry entry, IExtractionContext context)
     {
         var matchingFiles = context.Files
-            .Where(fileInfo => ArchiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName))
+            .Where(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName))
             .ToArray();
 
         // Several configuration rows (e.g. a name and a wildcard) can match the same entry and folder;

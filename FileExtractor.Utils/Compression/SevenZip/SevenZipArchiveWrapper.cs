@@ -3,16 +3,11 @@ using SharpCompress.Archives;
 
 namespace FileExtractor.Utils.Compression.SevenZip;
 
-internal sealed class SevenZipArchiveWrapper : IGenericArchive
+internal sealed class SevenZipArchiveWrapper(IArchive sevenZipArchive, ISharpCompressEntryReader entryReader) : IGenericArchive
 {
-    private readonly IArchive _sevenZipArchive;
-
-    public SevenZipArchiveWrapper(IArchive sevenZipArchive) =>
-        _sevenZipArchive = sevenZipArchive;
-
     public IEnumerable<IGenericArchiveEntry> Entries =>
-        SharpCompressArchiveEntries.Enumerate(_sevenZipArchive, entry => new SevenZipArchiveEntryWrapper(entry));
+        entryReader.ReadEntries(sevenZipArchive, entry => new SevenZipArchiveEntryWrapper(entry));
 
     public void Dispose() =>
-        _sevenZipArchive?.Dispose();
+        sevenZipArchive.Dispose();
 }

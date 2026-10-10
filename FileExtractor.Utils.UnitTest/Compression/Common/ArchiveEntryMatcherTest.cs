@@ -6,6 +6,8 @@ namespace FileExtractor.Utils.UnitTest.Compression.Common;
 
 public class ArchiveEntryMatcherTest
 {
+    private readonly ArchiveEntryMatcher _sut = new();
+
     [Theory]
     [InlineData("SomeName.dat", "SomeName.dat")]
     [InlineData("SomeName.dat", "somename.DAT")]
@@ -15,7 +17,7 @@ public class ArchiveEntryMatcherTest
     {
         var fileInfo = new FileInfoData("", configuredName, "SomeDirectory");
 
-        var result = ArchiveEntryMatcher.IsMatch(fileInfo, entryName, $@"SomeDirectory\{entryName}");
+        var result = _sut.IsMatch(fileInfo, entryName, $@"SomeDirectory\{entryName}");
 
         Assert.True(result);
     }
@@ -29,7 +31,7 @@ public class ArchiveEntryMatcherTest
     {
         var fileInfo = new FileInfoData("", configuredName, "SomeDirectory");
 
-        var result = ArchiveEntryMatcher.IsMatch(fileInfo, entryName, $@"SomeDirectory\{entryName}");
+        var result = _sut.IsMatch(fileInfo, entryName, $@"SomeDirectory\{entryName}");
 
         Assert.False(result);
     }
@@ -43,7 +45,7 @@ public class ArchiveEntryMatcherTest
     {
         var fileInfo = new FileInfoData("", "SomeName.dat", "");
 
-        var result = ArchiveEntryMatcher.IsMatch(fileInfo, "SomeName.dat", entryFullName);
+        var result = _sut.IsMatch(fileInfo, "SomeName.dat", entryFullName);
 
         Assert.True(result);
     }
@@ -57,7 +59,7 @@ public class ArchiveEntryMatcherTest
     {
         var fileInfo = new FileInfoData("", "SomeName.dat", location);
 
-        var result = ArchiveEntryMatcher.IsMatch(fileInfo, "SomeName.dat", entryFullName);
+        var result = _sut.IsMatch(fileInfo, "SomeName.dat", entryFullName);
 
         Assert.True(result);
     }
@@ -70,7 +72,7 @@ public class ArchiveEntryMatcherTest
     {
         var fileInfo = new FileInfoData("", "SomeName.dat", location);
 
-        var result = ArchiveEntryMatcher.IsMatch(fileInfo, "SomeName.dat", entryFullName);
+        var result = _sut.IsMatch(fileInfo, "SomeName.dat", entryFullName);
 
         Assert.False(result);
     }
