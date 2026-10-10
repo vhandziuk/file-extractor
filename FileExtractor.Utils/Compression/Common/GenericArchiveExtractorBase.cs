@@ -1,4 +1,3 @@
-using System.IO.Enumeration;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
@@ -97,11 +96,7 @@ public abstract class GenericArchiveExtractorBase : IArchiveExtractor
         foreach (var pair in data)
         {
             var matchingEntries = entries
-                .Where(entry =>
-                    FileSystemName.MatchesSimpleExpression(pair.Key, entry.Name)
-                    && (string.IsNullOrWhiteSpace(pair.Value.Location)
-                        ? string.IsNullOrWhiteSpace(Path.GetDirectoryName(entry.FullName))
-                        : Path.GetDirectoryName(entry.FullName)?.EndsWith(pair.Value.Location, StringComparison.OrdinalIgnoreCase) == true))
+                .Where(entry => ArchiveEntryMatcher.IsMatch(pair.Value, entry.Name, entry.FullName))
                 .ToList();
 
             if (!matchingEntries.Any())

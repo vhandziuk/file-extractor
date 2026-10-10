@@ -12,7 +12,7 @@ Supported archive types: **Zip, Rar, 7z, Tar, Bz2, Gz, Lz, Xz**
 
 **_NOTE:_** The tool does not support password-protected archives.
 
-**_NOTE:_** The application is built with .NET 8. The respective .NET runtime (if missing) will be deployed as a prerequisite by the application installer.
+**_NOTE:_** The application is built with .NET 10. The respective .NET runtime (if missing) will be deployed as a prerequisite by the application installer.
 
 ## Configuration file structure
 
@@ -22,7 +22,7 @@ The first column is the name of the archive entry to be extracted (e.g., test1.t
 
 The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the destination path.
 
-The third column is a part of the relative subpath of the entry in archive. If the entry is located in the archive root, the value should be left blank.
+The third column is a part of the relative subpath of the entry in archive. If the value is left blank, the entry is searched for in any folder of the archive, including the archive root.
 
 ### Example archive data and configuration file
 
@@ -65,7 +65,7 @@ test08.txt,Output,Subfolder02
 The tool can be used from command line or `powershell` as follows:
 
 ``` powershell
-  fileextractor -s "<source>" [-d "<destination>"] [-c "<configuration>"] [--cache-configuration]
+  fileextractor -s "<source>" [-d "<destination>"] [-c "<configuration>"] [--cache-configuration] [--no-wait]
 ```
 
 The application accepts following command line arguments:
@@ -78,6 +78,8 @@ The application accepts following command line arguments:
   -d, --destination        Path to the destination directory
 
   --cache-configuration    Save current configuration as default
+
+  --no-wait                Do not wait for a key press to exit the app
 
   --help                   Display this help screen.
 
@@ -92,6 +94,8 @@ The application accepts following command line arguments:
 
 `--cache-configuration` /optional/ — when provided, the application will cache the used configuration `.csv` file to `%programdata%\File Extractor\configuration.csv` upon successful extraction.
 
+`--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
+
 The help screen and application version can be displayed with the following commands:
 
 ``` powershell
@@ -105,3 +109,36 @@ The help screen and application version can be displayed with the following comm
 **_NOTE:_** The tool creates the "File Extractor" folder context menu entry. When executed, the selected folder will be used as the `--source` argument for the application, `<destination>` and `<configuration>` will have their default values (see the description above).
 
 **_NOTE:_** The tool generates log files under `%programdata%\File Extractor\Logs`. The files can be used to check extended application output and error messages.
+
+## Building from source
+
+Prerequisites:
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Inno Setup 7](https://jrsoftware.org/isinfo.php) (only required to build the installers)
+
+Build and run the unit tests:
+
+``` powershell
+  dotnet build
+  dotnet test
+```
+
+The tests use xUnit v3 on Microsoft Testing Platform (enabled for `dotnet test` in `global.json`).
+
+Publish the application and build the installers:
+
+``` powershell
+  dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net10.0 --runtime win-x86 --no-self-contained
+  dotnet publish .\FileExtractor\FileExtractor.csproj --configuration release --framework net10.0 --runtime win-x64 --no-self-contained
+  iscc.exe /Qp .\Setup\Setup_x86.iss
+  iscc.exe /Qp .\Setup\Setup_x64.iss
+```
+
+The installers are written to the `Output` folder. They install the .NET 10 runtime as a prerequisite when it is missing.
+
+## License
+
+File Extractor is licensed under the [MIT License](LICENSE).
+
+The application and its installer use third-party packages and code. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for their copyright notices and licenses.

@@ -19,6 +19,7 @@ namespace FileExtractor.Utils.DiRegistration;
 [Register(typeof(SevenZipFileUtils), Scope.SingleInstance, typeof(ISevenZipFileUtils))]
 [Register(typeof(SevenZipFileWrapper), Scope.SingleInstance, typeof(ISevenZipFile))]
 [Register(typeof(OtherArchiveFileExtractor), Scope.SingleInstance, typeof(IOtherArchiveFileExtractor))]
+[Register(typeof(OtherArchiveFileWrapper), Scope.SingleInstance, typeof(IOtherArchiveFile))]
 [Register(typeof(ArchiveExtractorFactory), Scope.SingleInstance, typeof(IArchiveExtractorFactory))]
 [Register(typeof(ArchiveExtractor), Scope.SingleInstance, typeof(IArchiveExtractor))]
 public sealed class FileExtractorUtilsModule

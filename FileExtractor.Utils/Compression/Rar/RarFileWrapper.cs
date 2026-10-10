@@ -6,5 +6,5 @@ namespace FileExtractor.Utils.Compression.Rar;
 public sealed class RarFileWrapper : IRarFile
 {
     public IGenericArchive OpenRead(string archiveFileName) =>
-        new RarArchiveWrapper(RarArchive.Open(archiveFileName));
+        new RarArchiveWrapper(RarArchive.OpenArchive(archiveFileName));
 }

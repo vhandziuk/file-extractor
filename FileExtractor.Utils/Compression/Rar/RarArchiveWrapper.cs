@@ -5,9 +5,9 @@ namespace FileExtractor.Utils.Compression.Rar;
 
 internal sealed class RarArchiveWrapper : IGenericArchive
 {
-    private readonly RarArchive _rarArchive;
+    private readonly IRarArchive _rarArchive;
 
-    public RarArchiveWrapper(RarArchive rarArchive) =>
+    public RarArchiveWrapper(IRarArchive rarArchive) =>
         _rarArchive = rarArchive;
 
     public IReadOnlyCollection<IGenericArchiveEntry> Entries =>

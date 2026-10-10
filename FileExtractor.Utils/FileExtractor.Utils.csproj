@@ -1,25 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\GlobalAssemblyInfo.cs" Link="GlobalAssemblyInfo.cs" />
+    <PackageReference Include="SharpCompress" Version="0.50.5" />
+    <PackageReference Include="StrongInject" Version="1.4.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FileExtractor.Common\FileExtractor.Common.csproj" />
-    <ProjectReference Include="..\fileextractor.data\FileExtractor.Data.csproj" />
+    <ProjectReference Include="..\FileExtractor.Data\FileExtractor.Data.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="SharpCompress" Version="0.36.0" />
-    <PackageReference Include="StrongInject" Version="1.4.4" />
-  </ItemGroup>
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
-  </PropertyGroup>
-  <PropertyGroup>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-  </PropertyGroup>
 </Project>
