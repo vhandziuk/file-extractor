@@ -7,6 +7,7 @@ namespace FileExtractor.Application;
 internal sealed class App(
     IConfigurationCommand configurationCommand,
     IExtractCommand extractCommand,
+    IListCommand listCommand,
     ILogger<App> logger) : IApp
 {
     public async ValueTask RunAsync(ICommonOptions options, CancellationToken cancellationToken)
@@ -30,6 +31,7 @@ internal sealed class App(
         {
             IConfigurationOptions configurationOptions => configurationCommand.RunAsync(configurationOptions, cancellationToken),
             IExtractOptions extractOptions => extractCommand.RunAsync(extractOptions, cancellationToken),
+            IListOptions listOptions => listCommand.RunAsync(listOptions, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(options), options.GetType().Name, "Unsupported command line verb")
         };
 }

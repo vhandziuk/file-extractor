@@ -9,6 +9,7 @@ using StrongInject;
 namespace FileExtractor.Utils.DiRegistration;
 
 [Register(typeof(EnvironmentWrapper), Scope.SingleInstance, typeof(IEnvironment))]
+[Register(typeof(ConsoleWrapper), Scope.SingleInstance, typeof(IConsole))]
 [Register(typeof(FileSystemUtils), Scope.SingleInstance, typeof(IFileSystemUtils))]
 [Register(typeof(PathValidator), Scope.SingleInstance, typeof(IPathValidator))]
 [Register(typeof(ReparsePointGuard), Scope.SingleInstance, typeof(IReparsePointGuard))]

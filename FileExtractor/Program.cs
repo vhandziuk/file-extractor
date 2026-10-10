@@ -9,7 +9,7 @@ if (OperatingSystem.IsWindows())
     new DllSearchPathHardener().Harden();
 
 await Parser.Default
-    .ParseArguments(args, typeof(ConfigurationOptions), typeof(ExtractOptions))
+    .ParseArguments(args, typeof(ConfigurationOptions), typeof(ExtractOptions), typeof(ListOptions))
     .WithParsedAsync<ICommonOptions>(
         async options =>
         {
