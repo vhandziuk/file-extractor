@@ -2,9 +2,9 @@ namespace FileExtractor.Application.Options;
 
 internal interface IConfigurationOptions : IExtractionOptions
 {
+    string Source { get; }
     string? Configuration { get; }
-    string? Source { get; }
-    string? Destination { get; }
+    string? Output { get; }
     bool Recursive { get; }
     bool CacheConfiguration { get; }
 }

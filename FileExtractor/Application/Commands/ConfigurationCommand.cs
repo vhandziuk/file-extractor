@@ -14,6 +14,7 @@ internal sealed class ConfigurationCommand(
     IArchiveFinder archiveFinder,
     IArchiveExtractor archiveExtractor,
     IExtractionSettingsFactory extractionSettingsFactory,
+    IOutputPathResolver outputPathResolver,
     IReparsePointGuard reparsePointGuard,
     ILogger<ConfigurationCommand> logger) : IConfigurationCommand
 {
@@ -21,9 +22,10 @@ internal sealed class ConfigurationCommand(
 
     public async Task RunAsync(IConfigurationOptions options, CancellationToken cancellationToken)
     {
-        if (options.Source is not { } sourcePath || !fileSystemUtils.DirectoryExists(sourcePath))
+        var sourcePath = options.Source;
+        if (!fileSystemUtils.DirectoryExists(sourcePath))
         {
-            logger.Warning("Source path is not provided or does not exist. The program will now exit");
+            logger.Warning("Source path {Path} does not exist. The program will now exit", sourcePath);
             return;
         }
 
@@ -53,7 +55,8 @@ internal sealed class ConfigurationCommand(
             return;
         }
 
-        var settings = extractionSettingsFactory.Create(options, GetDestinationPath(options.Destination, sourcePath), fileData);
+        var outputPath = outputPathResolver.Resolve(options.Output, sourcePath);
+        var settings = extractionSettingsFactory.Create(options, outputPath, fileData);
 
         logger.Information("Starting file extraction");
         await archiveExtractor.ExtractFilesAsync(archives, settings, cancellationToken);
@@ -77,11 +80,6 @@ internal sealed class ConfigurationCommand(
 
         return candidatePaths.FirstOrDefault(path => path is not null && fileSystemUtils.FileExists(path));
     }
-
-    private string GetDestinationPath(string? destinationPath, string sourcePath) =>
-        destinationPath is not null && fileSystemUtils.DirectoryExists(destinationPath)
-            ? destinationPath
-            : sourcePath;
 
     private void CacheConfiguration(string configurationPath, string cachedConfigurationPath)
     {

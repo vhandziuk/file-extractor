@@ -23,9 +23,9 @@ Supported archive types: **Zip, Rar, 7z, Tar, Bz2, Gz, Lz, Xz**
 
 Configuration file must contain 3 columns, separated by a comma. The default file name is `configuration.csv`, and the default file location is the same as the `source` folder.
 
-The first column is the name of the archive entry to be extracted (e.g., test1.txt). If the file is found in any of the archives (in a specified subpath, defined by the third column), it is then unpacked to the destination path. This value also supports simple wildcards `*` and `?`.
+The first column is the name of the archive entry to be extracted (e.g., test1.txt). If the file is found in any of the archives (in a specified subpath, defined by the third column), it is then unpacked to the output directory. This value also supports simple wildcards `*` and `?`.
 
-The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the destination path. The path must stay inside the destination path: absolute paths, drive letters and `..` segments are rejected as a malformed configuration.
+The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the output directory. The path must stay inside the output directory: absolute paths, drive letters and `..` segments are rejected as a malformed configuration.
 
 The third column is a part of the relative subpath of the entry in archive. If the value is left blank, the entry is searched for in any folder of the archive, including the archive root.
 
@@ -48,7 +48,7 @@ Let's imagine we have an archive with the following structure:
  ┗ 📜test02.txt
  </pre>
 
- Let's consider that we want to extract every even file to the root of the destination directory, and every odd file - to the `Output` subfolder of the destination directory. Then, the corresponding configuration file will look as follows:
+ Let's consider that we want to extract every even file to the root of the output directory, and every odd file - to the `Output` subfolder of the output directory. Then, the corresponding configuration file will look as follows:
 
  ```
 test01.txt,,
@@ -77,11 +77,11 @@ The tool can be used from command line or `powershell`. The first argument selec
 
 ``` powershell
   fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-j <count>] [--follow-symlinks] [--no-wait]
-  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config "<source>" [-c "<configuration>"] [-o "<output>"] [-r] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
   fileextractor list "<archive>" [-r] [--no-wait]
 ```
 
-**_NOTE:_** In earlier versions, the configuration mode was the default (`fileextractor -s "<source>"`). It now needs the `config` verb: `fileextractor config -s "<source>"`. An archive named exactly like a verb (for example, `list`) needs the explicit `x` verb: `fileextractor x list`.
+**_NOTE:_** In earlier versions, the configuration mode was the default (`fileextractor -s "<source>" -d "<destination>" -p <count>`). It now needs the `config` verb, takes the source directory as its first argument, and uses the same option names as `extract`: `fileextractor config "<source>" -o "<output>" -j <count>`. An archive named exactly like a verb (for example, `list`) needs the explicit `x` verb: `fileextractor x list`.
 
 The help screen and application version can be displayed with the following commands:
 
@@ -100,24 +100,22 @@ Pressing `Ctrl+C` stops the extraction after the files currently being written; 
 | A supported archive | File Extractor: Extract here | `fileextractor x "<archive>" -o "<folder of the archive>"` |
 | A supported archive | File Extractor: Extract to subfolder | the same with `--archive-folder`, so the files go to a subfolder named after the archive |
 | A folder or the background of a folder | File Extractor: Extract archives here | `fileextractor x "<folder>" -o "<folder>"`: every archive located directly in the folder, into that folder |
-| A folder or the background of a folder | File Extractor: Extract using configuration | `fileextractor config -s "<folder>"`, with the default `<destination>` and `<configuration>` |
+| A folder or the background of a folder | File Extractor: Extract using configuration | `fileextractor config "<folder>"`, with the default `<output>` and `<configuration>` |
 
 **_NOTE:_** The tool generates log files under `%localappdata%\File Extractor\Logs` of the current user. The files can be used to check extended application output and error messages.
 
 ### Extracting with a configuration file (`config`)
 
 ``` powershell
-  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config "<source>" [-c "<configuration>"] [-o "<output>"] [-r] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
 ```
 
 The verb accepts following command line arguments:
 
 ```
-  -c, --configuration      Path to a CSV configuration file
+  -c, --configuration      Path to a CSV configuration file (default: configuration.csv in the source directory, then the cached configuration)
 
-  -s, --source             Path to the source directory
-
-  -d, --destination        Path to the destination directory
+  -o, --output             Path to the output directory, created when missing (default: the source directory)
 
   -r, --recursive          Search for archives in subdirectories of the source directory as well
 
@@ -125,14 +123,16 @@ The verb accepts following command line arguments:
 
   -j, --jobs               Maximum number of archives extracted in parallel (default: number of processors)
 
-  --follow-symlinks        Extract files into folders below the destination directory that are symbolic links or junctions
+  --follow-symlinks        Extract files into folders below the output directory that are symbolic links or junctions
 
   --no-wait                Do not wait for a key press to exit the app
+
+  source (pos. 0)          Required. Path to the source directory with the archives
 ```
 
-`-s` or `--source` /mandatory/ — is the full path to the directory containing archived files. If the argument is not provided or provided directory does not exist, the application will print a warning message and exit.
+`<source>` /mandatory/ — is the path to the directory containing archived files. If the directory does not exist, the application will print a warning message and exit.
 
-`-d` or `--destination` /optional/ — is the full path to the output directory (where extracted files will be placed). If the argument is not provided, the default output location will be the same as `<source>`.
+`-o` or `--output` /optional/ — is the path to the output directory (where extracted files will be placed). It is created when it does not exist. If the argument is not provided, the files are extracted into `<source>`.
 
 `-r` or `--recursive` /optional/ — when provided, archives are searched in `<source>` and all its subdirectories. By default, only archives located directly in `<source>` are processed.
 
@@ -142,7 +142,7 @@ The verb accepts following command line arguments:
 
 `-j` or `--jobs` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-j 1`) when the archives are on a slow hard drive.
 
-`--follow-symlinks` /optional/ — when provided, files are also extracted into subfolders of `<destination>` that are symbolic links or junctions (for example, a subfolder linked to another drive). By default, such destinations are skipped with a warning, because a link planted below the destination could redirect the extraction anywhere. Use it only when you trust everyone who can write to `<destination>`. Destinations outside `<destination>` remain rejected, and the log and cached configuration folders are protected regardless of this option.
+`--follow-symlinks` /optional/ — when provided, files are also extracted into subfolders of `<output>` that are symbolic links or junctions (for example, a subfolder linked to another drive). By default, such destinations are skipped with a warning, because a link planted below the output directory could redirect the extraction anywhere. Use it only when you trust everyone who can write to `<output>`. Destinations outside `<output>` remain rejected, and the log and cached configuration folders are protected regardless of this option.
 
 `--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
 
@@ -215,9 +215,9 @@ The verb prints the path of each archive that `<archive>` denotes (a file, a dir
 
 Archives and configuration files are treated as untrusted input:
 
-- Archive entries whose names are not plain file names (path separators, `..`, alternate data streams, reserved device names such as `CON`) are skipped, and no file is ever written outside the destination path.
+- Archive entries whose names are not plain file names (path separators, `..`, alternate data streams, reserved device names such as `CON`) are skipped, and no file is ever written outside the output directory.
 - When the `extract` verb keeps the folders of an archive, every folder of an entry must be a plain folder name as well; entries with `..`, drive letters, alternate data streams or reserved device names in their path are skipped.
-- Files are not written through a symbolic link or junction below the destination path unless `--follow-symlinks` is provided, and existing files are never overwritten.
+- Files are not written through a symbolic link or junction below the output directory unless `--follow-symlinks` is provided, and existing files are never overwritten.
 - Logs and the cached configuration are kept per user, so another user cannot redirect them; the log folder is labeled with Medium integrity, even when the tool runs elevated.
 - Native DLLs are not loaded from the current folder or from `PATH`.
 

@@ -11,27 +11,39 @@ public class ConfigurationOptionsTest
     [Fact]
     public void ParseArguments_ConfigVerbGiven_ParsesConfigurationOptions()
     {
-        var result = ParseArguments("config", "-s", @"C:\Source", "-c", @"C:\Config\custom.csv", "-r");
+        var result = ParseArguments("config", @"C:\Source", "-c", @"C:\Config\custom.csv", "-o", @"C:\Output", "-r");
 
         var options = Assert.IsType<ConfigurationOptions>(Assert.IsType<Parsed<object>>(result).Value);
         Assert.Equal(@"C:\Source", options.Source);
         Assert.Equal(@"C:\Config\custom.csv", options.Configuration);
+        Assert.Equal(@"C:\Output", options.Output);
         Assert.True(options.Recursive);
     }
 
     [Fact]
     public void ParseArguments_JobsGiven_ParsesMaxParallelism()
     {
-        var result = ParseArguments("config", "-s", @"C:\Source", "-j", "2");
+        var result = ParseArguments("config", @"C:\Source", "-j", "2");
 
         var options = Assert.IsType<ConfigurationOptions>(Assert.IsType<Parsed<object>>(result).Value);
         Assert.Equal(2, options.MaxParallelism);
     }
 
     [Fact]
-    public void ParseArguments_SourceGivenWithoutVerb_Fails()
+    public void ParseArguments_SourceIsMissing_Fails()
     {
-        var result = ParseArguments("-s", @"C:\Source");
+        var result = ParseArguments("config", "-c", @"C:\Config\custom.csv");
+
+        Assert.IsType<NotParsed<object>>(result);
+    }
+
+    [Theory]
+    [InlineData("config", "-s", @"C:\Source")]
+    [InlineData("config", @"C:\Source", "-d", @"C:\Output")]
+    [InlineData("-s", @"C:\Source")]
+    public void ParseArguments_OptionsOfEarlierVersionsGiven_Fails(params string[] args)
+    {
+        var result = ParseArguments(args);
 
         Assert.IsType<NotParsed<object>>(result);
     }

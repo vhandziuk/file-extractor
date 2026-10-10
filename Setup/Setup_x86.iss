@@ -31,7 +31,7 @@ Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere"; V
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%V"" -o ""%V"""
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueData: "File Extractor: Extract using configuration"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" config -s ""%V"""
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" config ""%V"""
 #endsub
 
 #for {i = 0; i < DimOf(ArchiveExtensions); i++} RegisterArchiveVerbs

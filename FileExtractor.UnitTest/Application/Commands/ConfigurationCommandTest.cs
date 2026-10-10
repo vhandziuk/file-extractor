@@ -20,7 +20,7 @@ public class ConfigurationCommandTest
 {
     private const string SomeLocalAppDataDirectory = @"C:\Users\SomeUser\AppData\Local";
     private const string SomeSourcePath = @"C:\Source";
-    private const string SomeDestinationPath = @"C:\Destination\Extracted";
+    private const string SomeOutputPath = @"C:\Output\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
     private const string SomeOtherConfigurationPath = @"C:\Config\custom.csv";
     private const int SomeProcessorCount = 8;
@@ -34,6 +34,7 @@ public class ConfigurationCommandTest
     private readonly Mock<IArchiveFinder> _archiveFinderMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<IExtractionSettingsFactory> _extractionSettingsFactoryMock = new();
+    private readonly Mock<IOutputPathResolver> _outputPathResolverMock = new();
     private readonly Mock<IReparsePointGuard> _reparsePointGuardMock = new();
     private readonly Mock<ILogger<ConfigurationCommand>> _loggerMock = new();
     private readonly Mock<IConfigurationOptions> _optionsMock = new();
@@ -44,13 +45,15 @@ public class ConfigurationCommandTest
 
     public ConfigurationCommandTest()
     {
-        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
+        SetupCommandLineOptions(SomeSourcePath, SomeOutputPath, SomeConfigurationPath, false);
 
         LetLocalAppDataDirectoryBe(SomeLocalAppDataDirectory);
         LetSettingsFactoryUseProcessorCount(SomeProcessorCount);
         LetDirectoryExist(SomeSourcePath);
-        LetDirectoryExist(SomeDestinationPath);
         LetFileExist(SomeConfigurationPath);
+        _outputPathResolverMock
+            .Setup(resolver => resolver.Resolve(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns<string, string>((outputPath, defaultPath) => outputPath ?? defaultPath);
 
         _sut = new ConfigurationCommand(
             _environmentMock.Object,
@@ -59,21 +62,9 @@ public class ConfigurationCommandTest
             _archiveFinderMock.Object,
             _archiveExtractorMock.Object,
             _extractionSettingsFactoryMock.Object,
+            _outputPathResolverMock.Object,
             _reparsePointGuardMock.Object,
             _loggerMock.Object);
-    }
-
-    [Fact]
-    public async Task RunAsync_SourcePathIsNotProvided_DoesNotExtractFiles()
-    {
-        SetupCommandLineOptions(sourcePath: null, SomeDestinationPath, SomeConfigurationPath, false);
-
-        await RunAsync();
-
-        _loggerMock.Verify(logger =>
-            logger.Warning("Source path is not provided or does not exist. The program will now exit"));
-        _fileInfoProviderMock.VerifyNoOtherCalls();
-        _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -84,9 +75,10 @@ public class ConfigurationCommandTest
         await RunAsync();
 
         _loggerMock.Verify(logger =>
-            logger.Warning("Source path is not provided or does not exist. The program will now exit"));
+            logger.Warning("Source path {Path} does not exist. The program will now exit", SomeSourcePath));
         _fileInfoProviderMock.VerifyNoOtherCalls();
         _archiveExtractorMock.VerifyNoOtherCalls();
+        _outputPathResolverMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -107,7 +99,7 @@ public class ConfigurationCommandTest
     [Fact]
     public async Task RunAsync_ConfigurationOptionIsNotProvided_UsesConfigurationFromSourceDirectory()
     {
-        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, configurationPath: null, false);
+        SetupCommandLineOptions(SomeSourcePath, SomeOutputPath, configurationPath: null, false);
         LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
@@ -119,7 +111,7 @@ public class ConfigurationCommandTest
     [Fact]
     public async Task RunAsync_ConfiguredFileDoesNotExist_UsesConfigurationFromSourceDirectory()
     {
-        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
+        SetupCommandLineOptions(SomeSourcePath, SomeOutputPath, SomeOtherConfigurationPath, false);
         LetFileNotExist(SomeOtherConfigurationPath);
         LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
@@ -132,7 +124,7 @@ public class ConfigurationCommandTest
     [Fact]
     public async Task RunAsync_ConfiguredFileExists_UsesConfiguredFile()
     {
-        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
+        SetupCommandLineOptions(SomeSourcePath, SomeOutputPath, SomeOtherConfigurationPath, false);
         LetFileExist(SomeOtherConfigurationPath);
         LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeOtherConfigurationPath, new FileInfoData("", "file1.dat", ""));
@@ -184,7 +176,7 @@ public class ConfigurationCommandTest
         await RunAsync();
 
         _archiveFinderMock.Verify(finder => finder.FindArchives(SomeSourcePath, recursive), Times.Once);
-        VerifyExtractFilesAsync(new[] { "file1.zip", @"Nestedile2.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
+        VerifyExtractFilesAsync(new[] { "file1.zip", @"Nestedile2.zip" }, SomeOutputPath, fileData, SomeProcessorCount);
     }
 
     [Fact]
@@ -215,7 +207,7 @@ public class ConfigurationCommandTest
 
         _loggerMock.Verify(logger =>
             logger.Information("Starting file extraction"));
-        VerifyExtractFilesAsync(archives, SomeDestinationPath, fileData, SomeProcessorCount);
+        VerifyExtractFilesAsync(archives, SomeOutputPath, fileData, SomeProcessorCount);
         _loggerMock.Verify(logger =>
             logger.Information("File extraction completed"));
         _fileSystemUtilsMock.Verify(utils =>
@@ -223,16 +215,38 @@ public class ConfigurationCommandTest
     }
 
     [Fact]
-    public async Task RunAsync_DestinationDoesNotExist_ExtractsFilesToSourcePath()
+    public async Task RunAsync_ArchivesAndFilesFound_ResolvesOutputWithSourceAsDefault()
+    {
+        LetArchivesBe(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _outputPathResolverMock.Verify(resolver => resolver.Resolve(SomeOutputPath, SomeSourcePath), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_OutputIsNotProvided_ExtractsFilesToSourcePath()
     {
         var fileData = new[] { new FileInfoData("", "file1.dat", "") };
-        LetDirectoryNotExist(SomeDestinationPath);
+        SetupCommandLineOptions(SomeSourcePath, outputPath: null, SomeConfigurationPath, false);
         LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
         await RunAsync();
 
         VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeSourcePath, fileData, SomeProcessorCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfigurationContainsNoFiles_DoesNotResolveOutput()
+    {
+        LetArchivesBe(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath);
+
+        await RunAsync();
+
+        _outputPathResolverMock.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -245,7 +259,7 @@ public class ConfigurationCommandTest
 
         await RunAsync();
 
-        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeDestinationPath, new[] { fileInfo1, fileInfo2 }, SomeProcessorCount);
+        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeOutputPath, new[] { fileInfo1, fileInfo2 }, SomeProcessorCount);
     }
 
     [Fact]
@@ -272,7 +286,7 @@ public class ConfigurationCommandTest
         await RunAsync();
 
         _extractionSettingsFactoryMock.Verify(factory =>
-            factory.Create(_options, SomeDestinationPath, It.Is<IReadOnlyList<FileInfoData>>(files => files.SequenceEqual(fileData))), Times.Once);
+            factory.Create(_options, SomeOutputPath, It.Is<IReadOnlyList<FileInfoData>>(files => files.SequenceEqual(fileData))), Times.Once);
     }
 
     [Fact]
@@ -385,7 +399,7 @@ public class ConfigurationCommandTest
     public async Task RunAsync_UsedConfigurationIsCachedConfiguration_DoesNotCopyConfiguration()
     {
         var cachedConfigurationPathInOtherCase = CachedConfigurationPath.ToUpperInvariant();
-        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, cachedConfigurationPathInOtherCase, true);
+        SetupCommandLineOptions(SomeSourcePath, SomeOutputPath, cachedConfigurationPathInOtherCase, true);
         LetFileExist(cachedConfigurationPathInOtherCase);
         LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(cachedConfigurationPathInOtherCase, new FileInfoData("", "file1.dat", ""));
@@ -399,12 +413,12 @@ public class ConfigurationCommandTest
     private Task RunAsync() =>
         _sut.RunAsync(_options, TestContext.Current.CancellationToken);
 
-    private void VerifyExtractFilesAsync(string[] archives, string destinationPath, FileInfoData[] fileData, int maxDegreeOfParallelism) =>
+    private void VerifyExtractFilesAsync(string[] archives, string outputPath, FileInfoData[] fileData, int maxDegreeOfParallelism) =>
         _archiveExtractorMock.Verify(extractor =>
             extractor.ExtractFilesAsync(
                 archives,
                 It.Is<ExtractionSettings>(settings =>
-                    settings.OutputPath == destinationPath
+                    settings.OutputPath == outputPath
                     && settings.Files.SequenceEqual(fileData)
                     && settings.MaxDegreeOfParallelism == maxDegreeOfParallelism),
                 It.IsAny<CancellationToken>()), Times.Once);
@@ -416,14 +430,14 @@ public class ConfigurationCommandTest
             yield return entry;
     }
 
-    private void SetupCommandLineOptions(string sourcePath, string destinationPath, string configurationPath, bool cacheConfiguration)
+    private void SetupCommandLineOptions(string sourcePath, string outputPath, string configurationPath, bool cacheConfiguration)
     {
         _optionsMock
             .Setup(options => options.Source)
             .Returns(sourcePath);
         _optionsMock
-            .Setup(options => options.Destination)
-            .Returns(destinationPath);
+            .Setup(options => options.Output)
+            .Returns(outputPath);
         _optionsMock
             .Setup(options => options.Configuration)
             .Returns(configurationPath);
