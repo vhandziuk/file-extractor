@@ -164,6 +164,25 @@ public class AppTest
         _archiveExtractorMock.VerifyNoOtherCalls();
     }
 
+    [Theory]
+    [InlineData(false, SearchOption.TopDirectoryOnly)]
+    [InlineData(true, SearchOption.AllDirectories)]
+    public async Task RunAsync_RecursiveOptionProvided_SearchesArchivesWithMatchingScope(bool recursive, SearchOption expectedSearchOption)
+    {
+        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
+        LetRecursiveBe(recursive);
+        _fileSystemUtilsMock
+            .Setup(utils => utils.GetFiles(SomeSourcePath, "*.*", expectedSearchOption))
+            .Returns(["file1.zip", @"Nestedile2.zip"]);
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+
+        await RunAsync();
+
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.GetFiles(SomeSourcePath, "*.*", expectedSearchOption), Times.Once);
+        VerifyExtractFilesAsync(new[] { "file1.zip", @"Nestedile2.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
+    }
+
     [Fact]
     public async Task RunAsync_SourceDirectoryContainsOnlyUnsupportedFiles_DoesNotExtractFiles()
     {
@@ -465,7 +484,7 @@ public class AppTest
 
     private void LetGetFilesReturn(string path, params string[] fileNames) =>
         _fileSystemUtilsMock
-            .Setup(utils => utils.GetFiles(path, "*.*", SearchOption.AllDirectories))
+            .Setup(utils => utils.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly))
             .Returns(fileNames);
 
     private void LetEnumerateEntriesReturn(string path, params FileInfoData[] entries) =>
@@ -492,4 +511,9 @@ public class AppTest
         _commandLineOptionsMock
             .Setup(options => options.MaxParallelism)
             .Returns(maxParallelism);
+
+    private void LetRecursiveBe(bool recursive) =>
+        _commandLineOptionsMock
+            .Setup(options => options.Recursive)
+            .Returns(recursive);
 }
