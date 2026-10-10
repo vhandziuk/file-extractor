@@ -22,7 +22,7 @@ The first column is the name of the archive entry to be extracted (e.g., test1.t
 
 The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the destination path.
 
-The third column is a part of the relative subpath of the entry in archive. If the entry is located in the archive root, the value should be left blank.
+The third column is a part of the relative subpath of the entry in archive. If the value is left blank, the entry is searched for in any folder of the archive, including the archive root.
 
 ### Example archive data and configuration file
 

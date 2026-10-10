@@ -241,6 +241,26 @@ public class ZipFileExtractorTest
             entry.ExtractToFile(Path.Combine(SomeExtractedPath, "Test", "SomeName2.dat"), true), Times.Never);
     }
 
+    [Fact]
+    public async Task ExtractFiles_LocationIsEmpty_ExtractsMatchingEntriesFromAnyFolder()
+    {
+        var genericArchiveEntry1Mock = GetMockedGenericArchiveEntry(
+            "SomeName1.dat", "SomeName1.dat");
+        var genericArchiveEntry2Mock = GetMockedGenericArchiveEntry(
+            "SomeName2.dat", @"SomeDirectory\Nested\SomeName2.dat");
+        LetZipArchiveEntriesBe(SomeArchiveFileName1, genericArchiveEntry1Mock.Object, genericArchiveEntry2Mock.Object);
+
+        await _sut.ExtractFiles(
+            new[] { SomeArchiveFileName1 },
+            SomeExtractedPath,
+            new[] { new FileInfoData("", "SomeName?.dat", "") });
+
+        genericArchiveEntry1Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName1.dat"), true), Times.Once);
+        genericArchiveEntry2Mock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeExtractedPath, "SomeName2.dat"), true), Times.Once);
+    }
+
     private Mock<IGenericArchiveEntry> GetMockedGenericArchiveEntry(string name, string fullName)
     {
         var mock = new Mock<IGenericArchiveEntry>();
