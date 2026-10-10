@@ -8,8 +8,8 @@ Command line utility for selective unpacking of archived files.
 
 The tool extracts selected files from archives in two ways:
 
-- with a CSV configuration file that provides file names and relative locations of the entries to extract. It checks all the supported archives in the given `source` path and tries to extract specific archived entries as defined in the configuration (the `config` verb, used by default);
-- with the archive and the files named on the command line, similar to `unzip` or `7z x` (the `extract` verb).
+- with the archive and the files named on the command line, similar to `unzip` or `7z x` (the `extract` verb, used by default);
+- with a CSV configuration file that provides file names and relative locations of the entries to extract. It checks all the supported archives in the given `source` path and tries to extract specific archived entries as defined in the configuration (the `config` verb).
 
 The `list` verb shows the files in archives without extracting them.
 
@@ -71,15 +71,17 @@ The tool can be used from command line or `powershell`. The first argument selec
 
 | Verb | Alias | Description |
 | --- | --- | --- |
-| `config` | | Extract the files listed in a CSV configuration from the archives in a folder. This is the default verb and can be omitted. |
-| `extract` | `x` | Extract files from archives named on the command line. |
+| `extract` | `x` | Extract files from archives named on the command line. This is the default verb and can be omitted. |
+| `config` | | Extract the files listed in a CSV configuration from the archives in a folder. |
 | `list` | `l` | List the files in archives without extracting them. |
 
 ``` powershell
-  fileextractor [config] -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
-  fileextractor extract "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
   fileextractor list "<archive>" [-r] [--no-wait]
 ```
+
+**_NOTE:_** In earlier versions, the configuration mode was the default (`fileextractor -s "<source>"`). It now needs the `config` verb: `fileextractor config -s "<source>"`. An archive named exactly like a verb (for example, `list`) needs the explicit `x` verb: `fileextractor x list`.
 
 The help screen and application version can be displayed with the following commands:
 
@@ -105,7 +107,7 @@ Pressing `Ctrl+C` stops the extraction after the files currently being written; 
 ### Extracting with a configuration file (`config`)
 
 ``` powershell
-  fileextractor -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
 ```
 
 The verb accepts following command line arguments:
@@ -147,10 +149,10 @@ The verb accepts following command line arguments:
 ### Extracting files named on the command line (`extract`, `x`)
 
 ``` powershell
-  fileextractor extract "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
 ```
 
-The verb accepts following command line arguments:
+This is the default verb, so `extract` (or its alias `x`) can be omitted. The verb accepts following command line arguments:
 
 ```
   archive (pos. 0)         Required. Archive file, folder with archives, or wildcard path such as C:\Archives\*.zip
@@ -192,7 +194,7 @@ Examples:
 
 ``` powershell
   # extract everything from an archive into the current directory, keeping its folders
-  fileextractor x "C:\Downloads\package.zip"
+  fileextractor "C:\Downloads\package.zip"
 
   # extract the text files of the docs folder and all DLLs from every 7z archive in a folder
   fileextractor x "C:\Archives\*.7z" "docs/*.txt" "*.dll" -o "C:\Output"

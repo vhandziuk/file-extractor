@@ -2,7 +2,9 @@ using CommandLine;
 
 namespace FileExtractor.Application.Options;
 
-[Verb("extract", aliases: ["x"], HelpText = "Extract files from archives named on the command line")]
+// The default verb lets "fileextractor <archive>" work like unzip. An archive named exactly like a verb
+// ("list", "config") still needs the explicit "x".
+[Verb("extract", isDefault: true, aliases: ["x"], HelpText = "Extract files from archives named on the command line")]
 internal sealed class ExtractOptions : ExtractionOptionsBase, IExtractOptions
 {
     [Value(0, MetaName = "archive", Required = true, HelpText = @"Archive file, folder with archives, or wildcard path such as C:\Archives\*.zip")]

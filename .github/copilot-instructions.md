@@ -7,7 +7,7 @@ Distilled for this repository from the [awesome-copilot](https://github.com/gith
 - Windows console app (`FileExtractor.exe`) that selectively extracts files from archives based on a CSV configuration. Ships as x86/x64 Inno Setup installers.
 - .NET 10 (LTS), C# 14 (`LangVersion=latest`). Shared build settings live in `Directory.Build.props`; project files contain only what differs.
 - Projects:
-  - `FileExtractor` – entry point (`Program.cs`), command line verbs (CommandLineParser; `Application/Options`, with `config` as the default verb), one command per verb (`Application/Commands`), `App` dispatch, DI container.
+  - `FileExtractor` – entry point (`Program.cs`), command line verbs (CommandLineParser; `Application/Options`, with `extract` as the default verb), one command per verb (`Application/Commands`), `App` dispatch, DI container.
   - `FileExtractor.Common` – logging abstraction (`ILogger<T>` over Serilog) and threading helpers (`ITaskRunner`, bounded parallel `ForEachAsync`).
   - `FileExtractor.Data` – CSV configuration parsing (`ICsvFileInfoProvider`, `FileInfoData`) over the `ITextFile` wrapper, and command-line file patterns (`IFilePatternParser`).
   - `FileExtractor.Utils` – archive extraction (System.IO.Compression for zip, SharpCompress for rar/7z/tar/gz/bz2/lz/xz), file system and environment wrappers.

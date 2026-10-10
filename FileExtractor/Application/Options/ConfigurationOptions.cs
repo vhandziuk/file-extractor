@@ -2,8 +2,7 @@ using CommandLine;
 
 namespace FileExtractor.Application.Options;
 
-// The default verb keeps "fileextractor -s <folder>", used by the folder context menu and existing scripts, working.
-[Verb("config", isDefault: true, HelpText = "Extract the files listed in a CSV configuration from the archives in a folder")]
+[Verb("config", HelpText = "Extract the files listed in a CSV configuration from the archives in a folder")]
 internal sealed class ConfigurationOptions : ExtractionOptionsBase, IConfigurationOptions
 {
     [Option('c', "configuration", Required = false, HelpText = "Path to a CSV configuration file")]
