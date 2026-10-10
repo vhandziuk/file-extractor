@@ -43,6 +43,17 @@ public class ExtractOptionsTest
         Assert.Equal(["*.txt"], options.Files);
     }
 
+    [Theory]
+    [InlineData("-j")]
+    [InlineData("--jobs")]
+    public void ParseArguments_JobsGiven_ParsesMaxParallelism(string option)
+    {
+        var result = ParseArguments(@"C:\Source\SomeArchive.zip", option, "4");
+
+        var options = Assert.IsType<ExtractOptions>(Assert.IsType<Parsed<object>>(result).Value);
+        Assert.Equal(4, options.MaxParallelism);
+    }
+
     [Fact]
     public void ParseArguments_ArchiveIsMissing_Fails()
     {

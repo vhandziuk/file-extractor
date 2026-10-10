@@ -20,6 +20,15 @@ public class ConfigurationOptionsTest
     }
 
     [Fact]
+    public void ParseArguments_JobsGiven_ParsesMaxParallelism()
+    {
+        var result = ParseArguments("config", "-s", @"C:\Source", "-j", "2");
+
+        var options = Assert.IsType<ConfigurationOptions>(Assert.IsType<Parsed<object>>(result).Value);
+        Assert.Equal(2, options.MaxParallelism);
+    }
+
+    [Fact]
     public void ParseArguments_SourceGivenWithoutVerb_Fails()
     {
         var result = ParseArguments("-s", @"C:\Source");

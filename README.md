@@ -76,8 +76,8 @@ The tool can be used from command line or `powershell`. The first argument selec
 | `list` | `l` | List the files in archives without extracting them. |
 
 ``` powershell
-  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
-  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-j <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
   fileextractor list "<archive>" [-r] [--no-wait]
 ```
 
@@ -107,7 +107,7 @@ Pressing `Ctrl+C` stops the extraction after the files currently being written; 
 ### Extracting with a configuration file (`config`)
 
 ``` powershell
-  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-j <count>] [--follow-symlinks] [--no-wait]
 ```
 
 The verb accepts following command line arguments:
@@ -123,7 +123,7 @@ The verb accepts following command line arguments:
 
   --cache-configuration    Save current configuration as default
 
-  -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
+  -j, --jobs               Maximum number of archives extracted in parallel (default: number of processors)
 
   --follow-symlinks        Extract files into folders below the destination directory that are symbolic links or junctions
 
@@ -140,7 +140,7 @@ The verb accepts following command line arguments:
 
 `--cache-configuration` /optional/ — when provided, the application will cache the used configuration `.csv` file to `%localappdata%\File Extractor\configuration.csv` upon successful extraction. The cached configuration is kept per user.
 
-`-p` or `--max-parallelism` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-p 1`) when the archives are on a slow hard drive.
+`-j` or `--jobs` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-j 1`) when the archives are on a slow hard drive.
 
 `--follow-symlinks` /optional/ — when provided, files are also extracted into subfolders of `<destination>` that are symbolic links or junctions (for example, a subfolder linked to another drive). By default, such destinations are skipped with a warning, because a link planted below the destination could redirect the extraction anywhere. Use it only when you trust everyone who can write to `<destination>`. Destinations outside `<destination>` remain rejected, and the log and cached configuration folders are protected regardless of this option.
 
@@ -149,7 +149,7 @@ The verb accepts following command line arguments:
 ### Extracting files named on the command line (`extract`, `x`)
 
 ``` powershell
-  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-j <count>] [--follow-symlinks] [--no-wait]
 ```
 
 This is the default verb, so `extract` (or its alias `x`) can be omitted. The verb accepts following command line arguments:
@@ -169,7 +169,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
   -r, --recursive          Search for archives in subdirectories as well when the archive is a folder or wildcard path
 
-  -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
+  -j, --jobs               Maximum number of archives extracted in parallel (default: number of processors)
 
   --follow-symlinks        Extract files into folders below the output directory that are symbolic links or junctions
 
@@ -188,7 +188,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
 `--archive-folder` /optional/ — when provided, each archive is extracted into a subdirectory of `<output>` named after the archive without its extension (for example, `<output>\Backup` for `Backup.zip`), so archives that contain files with the same names do not collide.
 
-`-r`, `-p`, `--follow-symlinks` and `--no-wait` work the same way as for the `config` verb.
+`-r`, `-j`, `--follow-symlinks` and `--no-wait` work the same way as for the `config` verb.
 
 Examples:
 
