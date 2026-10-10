@@ -13,8 +13,11 @@ public static class ArchiveEntryMatcher
     /// Returns <see langword="true"/> when the entry name matches the configured name (which may contain
     /// the <c>*</c> and <c>?</c> wildcards) and the entry is located in the configured location.
     /// </summary>
+    // An entry without a name (a directory, or a single-file archive that stores no name)
+    // cannot be written to a file, even when the configured name is "*".
     public static bool IsMatch(FileInfoData fileInfo, string entryName, string entryFullName) =>
-        FileSystemName.MatchesSimpleExpression(fileInfo.Name, entryName)
+        !string.IsNullOrEmpty(entryName)
+        && FileSystemName.MatchesSimpleExpression(fileInfo.Name, entryName)
         && IsInLocation(fileInfo.Location, entryFullName);
 
     // A blank location matches the entry in any folder of the archive; otherwise the entry's

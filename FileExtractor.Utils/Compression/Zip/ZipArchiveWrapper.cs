@@ -10,8 +10,11 @@ internal sealed class ZipArchiveWrapper : IGenericArchive
     public ZipArchiveWrapper(ZipArchive zipArchive) =>
         _zipArchive = zipArchive;
 
-    public IReadOnlyCollection<IGenericArchiveEntry> Entries =>
-        _zipArchive.Entries.Select(entry => new ZipArchiveEntryWrapper(entry)).ToArray();
+    // directory entries have an empty name
+    public IEnumerable<IGenericArchiveEntry> Entries =>
+        _zipArchive.Entries
+            .Where(entry => !string.IsNullOrEmpty(entry.Name))
+            .Select(entry => new ZipArchiveEntryWrapper(entry));
 
     public void Dispose() =>
         _zipArchive?.Dispose();

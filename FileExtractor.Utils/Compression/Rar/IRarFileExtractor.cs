@@ -1,5 +1,5 @@
 namespace FileExtractor.Utils.Compression.Rar;
 
-public interface IRarFileExtractor : IArchiveExtractor
+public interface IRarFileExtractor : IArchiveFileExtractor
 {
 }

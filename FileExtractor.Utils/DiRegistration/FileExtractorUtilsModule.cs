@@ -1,4 +1,5 @@
 using FileExtractor.Utils.Compression;
+using FileExtractor.Utils.Compression.Common;
 using FileExtractor.Utils.Compression.Other;
 using FileExtractor.Utils.Compression.Rar;
 using FileExtractor.Utils.Compression.SevenZip;
@@ -20,6 +21,8 @@ namespace FileExtractor.Utils.DiRegistration;
 [Register(typeof(SevenZipFileWrapper), Scope.SingleInstance, typeof(ISevenZipFile))]
 [Register(typeof(OtherArchiveFileExtractor), Scope.SingleInstance, typeof(IOtherArchiveFileExtractor))]
 [Register(typeof(OtherArchiveFileWrapper), Scope.SingleInstance, typeof(IOtherArchiveFile))]
+[Register(typeof(ArchiveEntryExtractor), Scope.SingleInstance, typeof(IArchiveEntryExtractor))]
+[Register(typeof(ArchiveTypeResolver), Scope.SingleInstance, typeof(IArchiveTypeResolver))]
 [Register(typeof(ArchiveExtractorFactory), Scope.SingleInstance, typeof(IArchiveExtractorFactory))]
 [Register(typeof(ArchiveExtractor), Scope.SingleInstance, typeof(IArchiveExtractor))]
 public sealed class FileExtractorUtilsModule

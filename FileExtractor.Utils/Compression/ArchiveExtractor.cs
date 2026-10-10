@@ -1,67 +1,90 @@
+using System.Collections.Concurrent;
 using FileExtractor.Common.Logging;
 using FileExtractor.Common.Threading;
 using FileExtractor.Data;
 
 namespace FileExtractor.Utils.Compression;
 
-public sealed class ArchiveExtractor : IArchiveExtractor
+public sealed class ArchiveExtractor(
+    IArchiveExtractorFactory archiveExtractorFactory,
+    IArchiveTypeResolver archiveTypeResolver,
+    IFileSystemUtils fileSystemUtils,
+    ITaskRunner taskRunner,
+    ILogger<ArchiveExtractor> logger) : IArchiveExtractor
 {
-    private readonly IArchiveExtractorFactory _archiveExtractorFactory;
-    private readonly ITaskRunner _taskRunner;
-    private readonly ILogger<ArchiveExtractor> _logger;
-
-    public ArchiveExtractor(
-        IArchiveExtractorFactory archiveExtractorFactory,
-        ITaskRunner taskRunner,
-        ILogger<ArchiveExtractor> logger)
+    public async Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(
+        IReadOnlyCollection<string> archiveFiles,
+        string outputPath,
+        IReadOnlyList<FileInfoData> fileData,
+        int maxDegreeOfParallelism,
+        CancellationToken cancellationToken)
     {
-        _archiveExtractorFactory = archiveExtractorFactory;
-        _taskRunner = taskRunner;
-        _logger = logger;
+        logger.Information("Processing files");
+
+        var context = new ExtractionContext(outputPath, fileData);
+        var extractedFiles = new ConcurrentBag<FileInfoData>();
+
+        await taskRunner.ForEachAsync(
+            OrderByLargestFirst(archiveFiles),
+            maxDegreeOfParallelism,
+            (archiveFile, token) =>
+            {
+                foreach (var fileInfo in ExtractArchive(archiveFile, context, token))
+                    extractedFiles.Add(fileInfo);
+
+                return ValueTask.CompletedTask;
+            },
+            cancellationToken);
+
+        var result = extractedFiles.ToHashSet();
+        ReportMissingFiles(fileData, result);
+
+        return result;
     }
 
-    public async Task<IEnumerable<FileInfoData>> ExtractFiles(IEnumerable<string> archives, string outputPath, IEnumerable<FileInfoData> fileData)
+    // Starting with the largest archives keeps a long-running archive from being picked up last,
+    // while the other workers would already be idle.
+    private IEnumerable<string> OrderByLargestFirst(IEnumerable<string> archiveFiles) =>
+        archiveFiles.OrderByDescending(fileSystemUtils.GetFileSize);
+
+    private IReadOnlyCollection<FileInfoData> ExtractArchive(string archiveFile, IExtractionContext context, CancellationToken cancellationToken)
     {
-        _logger.Information("Processing files");
+        if (!archiveTypeResolver.TryResolve(archiveFile, out var archiveType))
+        {
+            logger.Warning("Archive {Archive} has an unsupported type. Skipping it", archiveFile);
+            return [];
+        }
 
-        var result = await Task.WhenAll(archives
-            .GroupBy(archive => GetArchiveType(Path.GetExtension(archive)))
-            .ToDictionary(group => group.Key, group => group.ToArray())
-            .Select(data => _taskRunner.Run(() => _archiveExtractorFactory.Create(data.Key).ExtractFiles(data.Value, outputPath, fileData))));
+        try
+        {
+            return archiveExtractorFactory
+                .Create(archiveType)
+                .ExtractFiles(archiveFile, context, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // one corrupt or locked archive must not stop the others; its files are reported as missing
+            logger.Error(ex, "Failed to extract files from {Archive}. Skipping it", archiveFile);
+            return [];
+        }
+    }
 
-        var sortedFileData = fileData
+    private void ReportMissingFiles(IEnumerable<FileInfoData> fileData, IReadOnlySet<FileInfoData> extractedFiles)
+    {
+        var missingFiles = fileData
+            .Where(fileInfo => !extractedFiles.Contains(fileInfo))
             .OrderBy(fileInfo => fileInfo.Directory)
             .ThenBy(fileInfo => fileInfo.Name)
-            .ToHashSet();
-
-        var extractedFiles = result
-            .SelectMany(extracted => extracted)
             .ToArray();
 
-        sortedFileData.SymmetricExceptWith(extractedFiles);
-        if (!sortedFileData.Any())
+        if (missingFiles.Length == 0)
         {
-            _logger.Information("Processing completed. All files have been successfully extracted");
-            return extractedFiles;
+            logger.Information("Processing completed. All files have been successfully extracted");
+            return;
         }
-        _logger.Warning("Processing completed. Missing files detected");
-        foreach (var file in sortedFileData)
-            _logger.Warning("File {File} was not found in the supplied archive(s)", Path.Combine(file.Location, file.Name));
 
-        return extractedFiles;
+        logger.Warning("Processing completed. Missing files detected");
+        foreach (var file in missingFiles)
+            logger.Warning("File {File} was not found in the supplied archive(s)", Path.Combine(file.Location, file.Name));
     }
-
-    private static ArchiveType GetArchiveType(string archiveExtension) =>
-        archiveExtension.ToLowerInvariant() switch
-        {
-            ".zip" => ArchiveType.Zip,
-            ".rar" => ArchiveType.Rar,
-            ".7z" => ArchiveType.SevenZip,
-            ".tar" => ArchiveType.Other,
-            ".bz2" => ArchiveType.Other,
-            ".gz" => ArchiveType.Other,
-            ".lz" => ArchiveType.Other,
-            ".xz" => ArchiveType.Other,
-            _ => throw new Exception("Unsupported archive type")
-        };
 }

@@ -1,35 +1,40 @@
 namespace FileExtractor.Data;
 
-public sealed class CsvFileInfoProvider : ICsvFileInfoProvider
+public sealed class CsvFileInfoProvider(ITextFile textFile) : ICsvFileInfoProvider
 {
     private const int RequiredColumnCount = 3;
 
     public IEnumerable<FileInfoData> EnumerateEntries(string filePath)
     {
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        using var reader = new StreamReader(stream);
+        var lineNumber = 0;
 
-        while (reader.ReadLine() is string line)
+        foreach (var line in textFile.ReadLines(filePath))
         {
-            var data = line.Split(',');
-            if (data.Length != RequiredColumnCount)
-            {
-                throw new Exception(
-                    "Malformed configuration file. " +
-                    "Data must contain 3 columns containing file name, " +
-                    "extraction subfolder, and path in the archive");
-            }
-
-            var name = data[0];
-            var directory = data[1];
-            var location = data[2];
-
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new Exception("File name cannot be empty or whitespace");
-            }
-
-            yield return new FileInfoData(directory, name, location);
+            lineNumber++;
+            yield return Parse(line, lineNumber);
         }
+    }
+
+    private static FileInfoData Parse(string line, int lineNumber)
+    {
+        var data = line.Split(',');
+        if (data.Length != RequiredColumnCount)
+        {
+            throw new InvalidDataException(
+                $"Malformed configuration file at line {lineNumber}. " +
+                "Data must contain 3 columns containing file name, " +
+                "extraction subfolder, and path in the archive");
+        }
+
+        var name = data[0];
+        var directory = data[1];
+        var location = data[2];
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new InvalidDataException($"File name cannot be empty or whitespace (line {lineNumber})");
+        }
+
+        return new FileInfoData(directory, name, location);
     }
 }

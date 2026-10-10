@@ -2,5 +2,5 @@ namespace FileExtractor.Application;
 
 internal interface IApp
 {
-    ValueTask RunAsync(ICommandLineOptions options);
+    ValueTask RunAsync(ICommandLineOptions options, CancellationToken cancellationToken);
 }
