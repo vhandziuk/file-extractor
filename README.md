@@ -20,7 +20,7 @@ Configuration file must contain 3 columns, separated by a comma. The default fil
 
 The first column is the name of the archive entry to be extracted (e.g., test1.txt). If the file is found in any of the archives (in a specified subpath, defined by the third column), it is then unpacked to the destination path. This value also supports simple wildcards `*` and `?`.
 
-The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the destination path.
+The second column is a relative path (e.g., Root\Output). When specified, the file will be unpacked to the corresponding subfolder of the destination path. The path must stay inside the destination path: absolute paths, drive letters and `..` segments are rejected as a malformed configuration.
 
 The third column is a part of the relative subpath of the entry in archive. If the value is left blank, the entry is searched for in any folder of the archive, including the archive root.
 
@@ -65,7 +65,7 @@ test08.txt,Output,Subfolder02
 The tool can be used from command line or `powershell` as follows:
 
 ``` powershell
-  fileextractor -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [--no-wait] [-p <count>]
+  fileextractor -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [--no-wait] [-p <count>] [--follow-symlinks]
 ```
 
 The application accepts following command line arguments:
@@ -85,6 +85,8 @@ The application accepts following command line arguments:
 
   -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
 
+  --follow-symlinks        Extract files into folders below the destination that are symbolic links or junctions
+
   --help                   Display this help screen.
 
   --version                Display version information.
@@ -96,13 +98,15 @@ The application accepts following command line arguments:
 
 `-r` or `--recursive` /optional/ — when provided, archives are searched in `<source>` and all its subdirectories. By default, only archives located directly in `<source>` are processed.
 
-`-c` or `--configuration` /optional/ — is the full path to the configuration `.csv` file. If the argument is not provided, the default `<source>\configuration.csv` path is assumed. If the configuration file does not exist, the application will try to look for the cached `configuration.csv` file under `%programdata%\File Extractor` (see `--cache-configuration` below). If both the configuration file and cached configuration are not available, the application will print a warning message and exit.
+`-c` or `--configuration` /optional/ — is the full path to the configuration `.csv` file. If the argument is not provided, the default `<source>\configuration.csv` path is assumed. If the configuration file does not exist, the application will try to look for the cached `configuration.csv` file under `%localappdata%\File Extractor` of the current user (see `--cache-configuration` below). If both the configuration file and cached configuration are not available, the application will print a warning message and exit.
 
-`--cache-configuration` /optional/ — when provided, the application will cache the used configuration `.csv` file to `%programdata%\File Extractor\configuration.csv` upon successful extraction.
+`--cache-configuration` /optional/ — when provided, the application will cache the used configuration `.csv` file to `%localappdata%\File Extractor\configuration.csv` upon successful extraction. The cached configuration is kept per user.
 
 `--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
 
 `-p` or `--max-parallelism` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-p 1`) when the archives are on a slow hard drive.
+
+`--follow-symlinks` /optional/ — when provided, files are also extracted into subfolders of `<destination>` that are symbolic links or junctions (for example, a subfolder linked to another drive). By default, such destinations are skipped with a warning, because a link planted below the destination could redirect the extraction anywhere. Use it only when you trust everyone who can write to `<destination>`. Destinations outside `<destination>` remain rejected, and the log and cached configuration folders are protected regardless of this option.
 
 Pressing `Ctrl+C` stops the extraction after the files currently being written; partially extracted files are removed. Pressing `Ctrl+C` again terminates the application immediately.
 
@@ -118,7 +122,16 @@ The help screen and application version can be displayed with the following comm
 
 **_NOTE:_** The tool creates the "File Extractor" folder context menu entry. When executed, the selected folder will be used as the `--source` argument for the application, `<destination>` and `<configuration>` will have their default values, and only archives located directly in the selected folder are processed (see the description above).
 
-**_NOTE:_** The tool generates log files under `%programdata%\File Extractor\Logs`. The files can be used to check extended application output and error messages.
+**_NOTE:_** The tool generates log files under `%localappdata%\File Extractor\Logs` of the current user. The files can be used to check extended application output and error messages.
+
+## Security
+
+Archives and configuration files are treated as untrusted input:
+
+- Archive entries whose names are not plain file names (path separators, `..`, alternate data streams, reserved device names such as `CON`) are skipped, and no file is ever written outside the destination path.
+- Files are not written through a symbolic link or junction below the destination path unless `--follow-symlinks` is provided, and existing files are never overwritten.
+- Logs and the cached configuration are kept per user, so another user cannot redirect them; the log folder is labeled with Medium integrity, even when the tool runs elevated.
+- Native DLLs are not loaded from the current folder or from `PATH`.
 
 ## Building from source
 

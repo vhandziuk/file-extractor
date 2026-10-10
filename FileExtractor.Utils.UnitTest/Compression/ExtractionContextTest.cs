@@ -13,13 +13,23 @@ public class ExtractionContextTest
 
     private static readonly FileInfoData[] SomeFiles = [new("", "SomeName.dat", "SomeDirectory")];
 
-    private readonly ExtractionContext _sut = new(SomeOutputPath, SomeFiles);
+    private readonly ExtractionContext _sut = new(SomeOutputPath, SomeFiles, false);
 
     [Fact]
     public void Constructor_ValuesProvided_ExposesOutputPathAndFiles()
     {
         Assert.Equal(SomeOutputPath, _sut.OutputPath);
         Assert.Same(SomeFiles, _sut.Files);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_FollowSymbolicLinksProvided_ExposesIt(bool followSymbolicLinks)
+    {
+        var context = new ExtractionContext(SomeOutputPath, SomeFiles, followSymbolicLinks);
+
+        Assert.Equal(followSymbolicLinks, context.FollowSymbolicLinks);
     }
 
     [Fact]

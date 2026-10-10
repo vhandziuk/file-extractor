@@ -79,6 +79,24 @@ public class ArchiveExtractorTest
         Assert.Same(contexts[0], contexts[1]);
         Assert.Equal(SomeOutputPath, contexts[0].OutputPath);
         Assert.Equal(fileData, contexts[0].Files);
+        Assert.False(contexts[0].FollowSymbolicLinks);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExtractFilesAsync_FollowSymbolicLinksProvided_PassesItInContext(bool followSymbolicLinks)
+    {
+        IExtractionContext? passedContext = null;
+        _zipFileExtractorMock
+            .Setup(extractor => extractor.ExtractFiles(It.IsAny<string>(), It.IsAny<IExtractionContext>(), It.IsAny<CancellationToken>()))
+            .Callback<string, IExtractionContext, CancellationToken>((_, context, _) => passedContext = context)
+            .Returns([]);
+
+        await ExtractFilesAsync([SomeZipArchive], [SomeFileInfo1], followSymbolicLinks);
+
+        Assert.NotNull(passedContext);
+        Assert.Equal(followSymbolicLinks, passedContext.FollowSymbolicLinks);
     }
 
     [Fact]
@@ -86,7 +104,7 @@ public class ArchiveExtractorTest
     {
         using var cancellationTokenSource = new CancellationTokenSource();
 
-        await _sut.ExtractFilesAsync([SomeZipArchive], SomeOutputPath, [SomeFileInfo1], SomeMaxDegreeOfParallelism, cancellationTokenSource.Token);
+        await _sut.ExtractFilesAsync([SomeZipArchive], SomeOutputPath, [SomeFileInfo1], SomeMaxDegreeOfParallelism, false, cancellationTokenSource.Token);
 
         _taskRunnerMock.Verify(runner =>
             runner.ForEachAsync(
@@ -194,8 +212,8 @@ public class ArchiveExtractorTest
             logger.Warning("File {File} was not found in the supplied archive(s)", Path.Combine(SomeFileInfo1.Location, SomeFileInfo1.Name)), Times.Never);
     }
 
-    private Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(string[] archives, FileInfoData[] fileData) =>
-        _sut.ExtractFilesAsync(archives, SomeOutputPath, fileData, SomeMaxDegreeOfParallelism, TestContext.Current.CancellationToken);
+    private Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(string[] archives, FileInfoData[] fileData, bool followSymbolicLinks = false) =>
+        _sut.ExtractFilesAsync(archives, SomeOutputPath, fileData, SomeMaxDegreeOfParallelism, followSymbolicLinks, TestContext.Current.CancellationToken);
 
     private void LetTaskRunnerRunSequentially() =>
         _taskRunnerMock

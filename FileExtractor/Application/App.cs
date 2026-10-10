@@ -12,6 +12,7 @@ internal sealed class App(
     ICsvFileInfoProvider fileInfoProvider,
     IArchiveTypeResolver archiveTypeResolver,
     IArchiveExtractor archiveExtractor,
+    IReparsePointGuard reparsePointGuard,
     ILogger<App> logger) : IApp
 {
     private const string ConfigurationFileName = "configuration.csv";
@@ -66,12 +67,16 @@ internal sealed class App(
             return;
         }
 
+        if (options.FollowSymbolicLinks)
+            logger.Warning("Symbolic links and junctions below the destination path are followed");
+
         logger.Information("Starting file extraction");
         await archiveExtractor.ExtractFilesAsync(
             archives,
             GetDestinationPath(options.Destination, sourcePath),
             fileData,
             GetMaxDegreeOfParallelism(options.MaxParallelism),
+            options.FollowSymbolicLinks,
             cancellationToken);
         logger.Information("File extraction completed");
 
@@ -79,8 +84,13 @@ internal sealed class App(
             CacheConfiguration(configurationPath, cachedConfigurationPath);
     }
 
+    // Cached per user: in a folder shared by all users, such as ProgramData, another user could plant the
+    // configuration used by default or a junction that redirects the copy of an elevated run.
     private string GetCachedConfigurationPath() =>
-        Path.Combine(environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", ConfigurationFileName);
+        Path.Combine(GetLocalApplicationDataPath(), "File Extractor", ConfigurationFileName);
+
+    private string GetLocalApplicationDataPath() =>
+        environment.GetFolderPath(SpecialFolder.LocalApplicationData);
 
     private string? FindConfigurationPath(string? configuredPath, string sourcePath, string cachedConfigurationPath)
     {
@@ -115,6 +125,13 @@ internal sealed class App(
     {
         if (string.Equals(configurationPath, cachedConfigurationPath, StringComparison.OrdinalIgnoreCase))
             return;
+
+        // CreateDirectory and Copy would follow a junction or symbolic link to an arbitrary location
+        if (reparsePointGuard.ContainsReparsePoint(GetLocalApplicationDataPath(), cachedConfigurationPath))
+        {
+            logger.Warning("Cached configuration path {Path} contains a symbolic link or junction. The configuration is not cached", cachedConfigurationPath);
+            return;
+        }
 
         fileSystemUtils.CreateDirectory(Path.GetDirectoryName(cachedConfigurationPath)!);
         fileSystemUtils.Copy(configurationPath, cachedConfigurationPath, true);

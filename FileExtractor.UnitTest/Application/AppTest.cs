@@ -16,14 +16,14 @@ namespace FileExtractor.UnitTest.Application;
 
 public class AppTest
 {
-    private const string SomeCommonAppDataDirectory = @"C:\ProgramData";
+    private const string SomeLocalAppDataDirectory = @"C:\Users\SomeUser\AppData\Local";
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
     private const string SomeOtherConfigurationPath = @"C:\Config\custom.csv";
     private const int SomeProcessorCount = 8;
 
-    private static readonly string CachedConfigurationDirectory = Path.Combine(SomeCommonAppDataDirectory, "File Extractor");
+    private static readonly string CachedConfigurationDirectory = Path.Combine(SomeLocalAppDataDirectory, "File Extractor");
     private static readonly string CachedConfigurationPath = Path.Combine(CachedConfigurationDirectory, "configuration.csv");
 
     private readonly Mock<IEnvironment> _environmentMock = new();
@@ -31,6 +31,7 @@ public class AppTest
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
     private readonly Mock<IArchiveTypeResolver> _archiveTypeResolverMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
+    private readonly Mock<IReparsePointGuard> _reparsePointGuardMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
     private readonly Mock<ICommandLineOptions> _commandLineOptionsMock = new();
 
@@ -42,7 +43,7 @@ public class AppTest
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
 
-        LetCommonAppDataDirectoryBe(SomeCommonAppDataDirectory);
+        LetLocalAppDataDirectoryBe(SomeLocalAppDataDirectory);
         LetProcessorCountBe(SomeProcessorCount);
         LetArchiveExtensionBeSupported(".zip");
         LetDirectoryExist(SomeSourcePath);
@@ -55,6 +56,7 @@ public class AppTest
             _fileInfoProviderMock.Object,
             _archiveTypeResolverMock.Object,
             _archiveExtractorMock.Object,
+            _reparsePointGuardMock.Object,
             _loggerMock.Object);
     }
 
@@ -314,6 +316,47 @@ public class AppTest
             maxParallelism is null ? Times.Never() : Times.Once());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RunAsync_FollowSymbolicLinksOptionProvided_PassesItToExtractor(bool followSymbolicLinks)
+    {
+        LetFollowSymbolicLinksBe(followSymbolicLinks);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _archiveExtractorMock.Verify(extractor =>
+            extractor.ExtractFilesAsync(
+                It.IsAny<IReadOnlyCollection<string>>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<FileInfoData>>(),
+                It.IsAny<int>(),
+                followSymbolicLinks,
+                It.IsAny<CancellationToken>()), Times.Once);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Symbolic links and junctions below the destination path are followed"),
+            followSymbolicLinks ? Times.Once() : Times.Never());
+    }
+
+    [Fact]
+    public async Task RunAsync_FollowSymbolicLinksOptionProvided_StillProtectsCachedConfiguration()
+    {
+        LetFollowSymbolicLinksBe(true);
+        LetCacheConfigurationBe(true);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+        _reparsePointGuardMock
+            .Setup(guard => guard.ContainsReparsePoint(SomeLocalAppDataDirectory, CachedConfigurationPath))
+            .Returns(true);
+
+        await RunAsync();
+
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+    }
+
     [Fact]
     public async Task RunAsync_CancellationTokenProvided_PassesItToExtractor()
     {
@@ -329,6 +372,7 @@ public class AppTest
                 It.IsAny<string>(),
                 It.IsAny<IReadOnlyList<FileInfoData>>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 cancellationTokenSource.Token), Times.Once);
     }
 
@@ -367,6 +411,26 @@ public class AppTest
         await RunAsync();
 
         Assert.Equal(new[] { nameof(IFileSystemUtils.CreateDirectory), nameof(IFileSystemUtils.Copy) }, calls);
+    }
+
+    [Fact]
+    public async Task RunAsync_CachedConfigurationPathContainsReparsePoint_DoesNotCacheConfiguration()
+    {
+        LetCacheConfigurationBe(true);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+        _reparsePointGuardMock
+            .Setup(guard => guard.ContainsReparsePoint(SomeLocalAppDataDirectory, CachedConfigurationPath))
+            .Returns(true);
+
+        await RunAsync();
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Cached configuration path {Path} contains a symbolic link or junction. The configuration is not cached", CachedConfigurationPath), Times.Once);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.CreateDirectory(It.IsAny<string>()), Times.Never);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
     }
 
     [Fact]
@@ -419,7 +483,7 @@ public class AppTest
 
     private void VerifyExtractFilesAsync(string[] archives, string destinationPath, FileInfoData[] fileData, int maxDegreeOfParallelism) =>
         _archiveExtractorMock.Verify(extractor =>
-            extractor.ExtractFilesAsync(archives, destinationPath, fileData, maxDegreeOfParallelism, It.IsAny<CancellationToken>()), Times.Once);
+            extractor.ExtractFilesAsync(archives, destinationPath, fileData, maxDegreeOfParallelism, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
 
     private static IEnumerable<FileInfoData> CountEnumerations(Action onEnumerate, params FileInfoData[] entries)
     {
@@ -444,9 +508,9 @@ public class AppTest
             .Returns(cacheConfiguration);
     }
 
-    private void LetCommonAppDataDirectoryBe(string path) =>
+    private void LetLocalAppDataDirectoryBe(string path) =>
         _environmentMock
-            .Setup(environment => environment.GetFolderPath(SpecialFolder.CommonApplicationData))
+            .Setup(environment => environment.GetFolderPath(SpecialFolder.LocalApplicationData))
             .Returns(path);
 
     private void LetProcessorCountBe(int processorCount) =>
@@ -499,6 +563,7 @@ public class AppTest
                 It.IsAny<string>(),
                 It.IsAny<IReadOnlyList<FileInfoData>>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 
@@ -511,6 +576,11 @@ public class AppTest
         _commandLineOptionsMock
             .Setup(options => options.MaxParallelism)
             .Returns(maxParallelism);
+
+    private void LetFollowSymbolicLinksBe(bool followSymbolicLinks) =>
+        _commandLineOptionsMock
+            .Setup(options => options.FollowSymbolicLinks)
+            .Returns(followSymbolicLinks);
 
     private void LetRecursiveBe(bool recursive) =>
         _commandLineOptionsMock

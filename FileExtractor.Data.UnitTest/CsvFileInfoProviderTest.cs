@@ -73,6 +73,39 @@ public class CsvFileInfoProviderTest
         Assert.Contains("line 1", exception.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(@"SomeName.dat,C:\Windows,")]
+    [InlineData(@"SomeName.dat,\Windows,")]
+    [InlineData(@"SomeName.dat,C:Windows,")]
+    [InlineData(@"SomeName.dat,\\server\share,")]
+    [InlineData(@"SomeName.dat,..,")]
+    [InlineData(@"SomeName.dat,Test\..\..\Windows,")]
+    [InlineData("SomeName.dat,Test/../..,")]
+    [InlineData("SomeName.dat,Test:stream,")]
+    [InlineData("SomeName.dat,Te|st,")]
+    public void EnumerateEntries_DirectoryIsNotRelativeToDestination_ThrowsInvalidDataExceptionWithLineNumber(string line)
+    {
+        LetLinesBe("SomeName.dat,Test,SomeDirectory", line);
+
+        var exception = Assert.Throws<InvalidDataException>(() => _sut.EnumerateEntries(SomeConfigurationPath).ToArray());
+
+        Assert.Contains("line 2", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(@"Test\Nested")]
+    [InlineData("Test/Nested")]
+    [InlineData(@"Test\..Nested")]
+    [InlineData(@"Test\Nested..")]
+    public void EnumerateEntries_DirectoryIsRelative_ReturnsFileInfoData(string directory)
+    {
+        LetLinesBe($"SomeName.dat,{directory},");
+
+        var result = _sut.EnumerateEntries(SomeConfigurationPath).ToArray();
+
+        Assert.Equal([new FileInfoData(directory, "SomeName.dat", "")], result);
+    }
+
     [Fact]
     public void EnumerateEntries_EntriesNotEnumerated_DoesNotReadFile()
     {
