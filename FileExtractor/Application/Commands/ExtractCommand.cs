@@ -8,11 +8,11 @@ namespace FileExtractor.Application.Commands;
 
 internal sealed class ExtractCommand(
     IEnvironment environment,
-    IFileSystemUtils fileSystemUtils,
     IFilePatternParser filePatternParser,
     IArchiveFinder archiveFinder,
     IArchiveExtractor archiveExtractor,
     IExtractionSettingsFactory extractionSettingsFactory,
+    IOutputPathResolver outputPathResolver,
     ILogger<ExtractCommand> logger) : IExtractCommand
 {
     private const string AllFilesPattern = "*";
@@ -31,8 +31,7 @@ internal sealed class ExtractCommand(
             return;
         }
 
-        var outputPath = Path.GetFullPath(options.Output ?? environment.CurrentDirectory);
-        CreateOutputDirectory(outputPath);
+        var outputPath = outputPathResolver.Resolve(options.Output, environment.CurrentDirectory);
 
         var settings = extractionSettingsFactory.Create(options, outputPath, files) with
         {
@@ -51,13 +50,4 @@ internal sealed class ExtractCommand(
 
     private FileInfoData[] ParsePatterns(IEnumerable<string> patterns) =>
         [.. patterns.Select(filePatternParser.Parse).Distinct()];
-
-    private void CreateOutputDirectory(string outputPath)
-    {
-        if (fileSystemUtils.DirectoryExists(outputPath))
-            return;
-
-        logger.Information("Creating output directory {Path}", outputPath);
-        fileSystemUtils.CreateDirectory(outputPath);
-    }
 }

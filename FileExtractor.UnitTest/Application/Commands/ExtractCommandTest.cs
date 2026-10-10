@@ -25,11 +25,11 @@ public class ExtractCommandTest
     private static readonly FileInfoData AllFiles = new("", "*", "");
 
     private readonly Mock<IEnvironment> _environmentMock = new();
-    private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<IFilePatternParser> _filePatternParserMock = new();
     private readonly Mock<IArchiveFinder> _archiveFinderMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<IExtractionSettingsFactory> _extractionSettingsFactoryMock = new();
+    private readonly Mock<IOutputPathResolver> _outputPathResolverMock = new();
     private readonly Mock<ILogger<ExtractCommand>> _loggerMock = new();
     private readonly Mock<IExtractOptions> _optionsMock = new();
 
@@ -48,16 +48,18 @@ public class ExtractCommandTest
         _extractionSettingsFactoryMock
             .Setup(factory => factory.Create(It.IsAny<IExtractionOptions>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<FileInfoData>>()))
             .Returns<IExtractionOptions, string, IReadOnlyList<FileInfoData>>((_, outputPath, files) => new ExtractionSettings(outputPath, files, SomeProcessorCount));
-        LetDirectoryExist(SomeOutputPath);
+        _outputPathResolverMock
+            .Setup(resolver => resolver.Resolve(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns<string, string>((outputPath, defaultPath) => outputPath ?? defaultPath);
         LetArchivesBe(SomeArchive);
 
         _sut = new ExtractCommand(
             _environmentMock.Object,
-            _fileSystemUtilsMock.Object,
             _filePatternParserMock.Object,
             _archiveFinderMock.Object,
             _archiveExtractorMock.Object,
             _extractionSettingsFactoryMock.Object,
+            _outputPathResolverMock.Object,
             _loggerMock.Object);
     }
 
@@ -186,37 +188,21 @@ public class ExtractCommandTest
     }
 
     [Fact]
-    public async Task RunAsync_OutputIsNotProvided_ExtractsToCurrentDirectory()
+    public async Task RunAsync_ArchivesFound_ResolvesOutputWithCurrentDirectoryAsDefault()
     {
-        _optionsMock.SetupGet(options => options.Output).Returns((string)null);
-        LetDirectoryExist(SomeCurrentDirectory);
-
         await RunAsync();
 
-        VerifySettings(settings => settings.OutputPath == SomeCurrentDirectory);
-        _fileSystemUtilsMock.Verify(utils => utils.CreateDirectory(It.IsAny<string>()), Times.Never);
+        _outputPathResolverMock.Verify(resolver => resolver.Resolve(SomeOutputPath, SomeCurrentDirectory), Times.Once);
     }
 
     [Fact]
-    public async Task RunAsync_OutputDoesNotExist_CreatesIt()
-    {
-        _fileSystemUtilsMock.Setup(utils => utils.DirectoryExists(SomeOutputPath)).Returns(false);
-
-        await RunAsync();
-
-        _fileSystemUtilsMock.Verify(utils => utils.CreateDirectory(SomeOutputPath), Times.Once);
-        VerifySettings(settings => settings.OutputPath == SomeOutputPath);
-    }
-
-    [Fact]
-    public async Task RunAsync_NoArchivesFound_DoesNotCreateOutput()
+    public async Task RunAsync_NoArchivesFound_DoesNotResolveOutput()
     {
         LetArchivesBe();
-        _fileSystemUtilsMock.Setup(utils => utils.DirectoryExists(SomeOutputPath)).Returns(false);
 
         await RunAsync();
 
-        _fileSystemUtilsMock.Verify(utils => utils.CreateDirectory(It.IsAny<string>()), Times.Never);
+        _outputPathResolverMock.VerifyNoOtherCalls();
     }
 
     private Task RunAsync() =>
@@ -239,9 +225,4 @@ public class ExtractCommandTest
         _archiveFinderMock
             .Setup(finder => finder.FindArchives(SomeArchivePath, It.IsAny<bool>()))
             .Returns(archives);
-
-    private void LetDirectoryExist(string path) =>
-        _fileSystemUtilsMock
-            .Setup(utils => utils.DirectoryExists(path))
-            .Returns(true);
 }

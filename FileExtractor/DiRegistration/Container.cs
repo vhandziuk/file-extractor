@@ -14,6 +14,7 @@ namespace FileExtractor.DiRegistration;
 [Register(typeof(ConfigurationCommand), Scope.SingleInstance, typeof(IConfigurationCommand))]
 [Register(typeof(ExtractCommand), Scope.SingleInstance, typeof(IExtractCommand))]
 [Register(typeof(ListCommand), Scope.SingleInstance, typeof(IListCommand))]
+[Register(typeof(OutputPathResolver), Scope.SingleInstance, typeof(IOutputPathResolver))]
 [Register(typeof(ExtractionSettingsFactory), Scope.SingleInstance, typeof(IExtractionSettingsFactory))]
 internal partial class Container : IAsyncContainer<IApp>
 {
