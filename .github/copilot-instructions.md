@@ -8,12 +8,13 @@ Distilled for this repository from the [awesome-copilot](https://github.com/gith
 - .NET 10 (LTS), C# 14 (`LangVersion=latest`). Shared build settings live in `Directory.Build.props`; project files contain only what differs.
 - Projects:
   - `FileExtractor` – entry point (`Program.cs`), command line options (CommandLineParser), `App` orchestration, DI container.
-  - `FileExtractor.Common` – logging abstraction (`ILogger<T>` over Serilog) and threading helpers (`ITaskRunner`).
-  - `FileExtractor.Data` – CSV configuration parsing (`ICsvFileInfoProvider`, `FileInfoData`).
+  - `FileExtractor.Common` – logging abstraction (`ILogger<T>` over Serilog) and threading helpers (`ITaskRunner`, bounded parallel `ForEachAsync`).
+  - `FileExtractor.Data` – CSV configuration parsing (`ICsvFileInfoProvider`, `FileInfoData`) over the `ITextFile` wrapper.
   - `FileExtractor.Utils` – archive extraction (System.IO.Compression for zip, SharpCompress for rar/7z/tar/gz/bz2/lz/xz), file system and environment wrappers.
-  - `FileExtractor.UnitTest`, `FileExtractor.Utils.UnitTest` – unit tests.
+  - `FileExtractor.UnitTest`, `FileExtractor.Common.UnitTest`, `FileExtractor.Data.UnitTest`, `FileExtractor.Utils.UnitTest` – unit tests.
 - Dependency injection uses StrongInject (compile-time). Each project registers its types in a `DiRegistration/*Module.cs` class with `[Register]` attributes; the root `Container` in `FileExtractor/DiRegistration` imports the modules. Register new services there instead of creating them manually.
-- External APIs are hidden behind small interfaces so the code stays testable: `IFileSystemUtils`, `IEnvironment`, `I*File` / `I*FileUtils`, `IGenericArchive`, `IGenericArchiveEntry`. Do not call `File`, `Directory`, `Environment` or SharpCompress directly from business logic; extend or add a wrapper instead.
+- External APIs are hidden behind small interfaces so the code stays testable: `IFileSystemUtils`, `IEnvironment`, `ITextFile`, `ITaskRunner`, `I*File` / `I*FileUtils`, `IGenericArchive`, `IGenericArchiveEntry`. Do not call `File`, `Directory`, `Environment`, `Parallel` or SharpCompress directly from business logic; extend or add a wrapper instead.
+- Extraction pipeline: `App` resolves paths and reads the configuration once; `ArchiveExtractor` owns the parallelism and runs one `IArchiveFileExtractor` (synchronous, one archive) per archive through `ITaskRunner.ForEachAsync`. Every archive type writes entries through the shared `IArchiveEntryExtractor`, which claims each destination path in the per-run `IExtractionContext` so a file has exactly one writer. `IGenericArchive.Entries` is single-pass (solid archives are read forward-only); never enumerate it twice.
 
 ## C# language
 

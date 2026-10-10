@@ -28,11 +28,23 @@ public sealed class FileSystemUtils : IFileSystemUtils
 
     public bool FileExists(string path) => File.Exists(path);
 
+    public long GetFileSize(string path) => new FileInfo(path).Length;
+
     public string[] GetFiles(string path, string searchPattern, SearchOption searchOption)
     {
         try
         {
-            return Directory.GetFiles(path, searchPattern, searchOption);
+            // An inaccessible subfolder must not abort the whole scan. Win32 matching keeps "*.*"
+            // matching every file, as the SearchOption overload does.
+            return Directory.GetFiles(
+                path,
+                searchPattern,
+                new EnumerationOptions
+                {
+                    RecurseSubdirectories = searchOption == SearchOption.AllDirectories,
+                    IgnoreInaccessible = true,
+                    MatchType = MatchType.Win32
+                });
         }
         catch (Exception ex)
         {
@@ -50,6 +62,9 @@ public sealed class FileSystemUtils : IFileSystemUtils
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to copy file from {SourceFileName} to {DestFileName}", sourceFileName, destFileName);
+            throw;
         }
     }
+
+    public void DeleteFile(string path) => File.Delete(path);
 }

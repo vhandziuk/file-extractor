@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FileExtractor.Application;
 using FileExtractor.Common.Logging;
@@ -18,10 +20,16 @@ public class AppTest
     private const string SomeSourcePath = @"C:\Source";
     private const string SomeDestinationPath = @"C:\Destination\Extracted";
     private const string SomeConfigurationPath = @"C:\Source\configuration.csv";
+    private const string SomeOtherConfigurationPath = @"C:\Config\custom.csv";
+    private const int SomeProcessorCount = 8;
+
+    private static readonly string CachedConfigurationDirectory = Path.Combine(SomeCommonAppDataDirectory, "File Extractor");
+    private static readonly string CachedConfigurationPath = Path.Combine(CachedConfigurationDirectory, "configuration.csv");
 
     private readonly Mock<IEnvironment> _environmentMock = new();
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
+    private readonly Mock<IArchiveTypeResolver> _archiveTypeResolverMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
     private readonly Mock<ICommandLineOptions> _commandLineOptionsMock = new();
@@ -35,6 +43,8 @@ public class AppTest
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeConfigurationPath, false);
 
         LetCommonAppDataDirectoryBe(SomeCommonAppDataDirectory);
+        LetProcessorCountBe(SomeProcessorCount);
+        LetArchiveExtensionBeSupported(".zip");
         LetDirectoryExist(SomeSourcePath);
         LetDirectoryExist(SomeDestinationPath);
         LetFileExist(SomeConfigurationPath);
@@ -43,6 +53,7 @@ public class AppTest
             _environmentMock.Object,
             _fileSystemUtilsMock.Object,
             _fileInfoProviderMock.Object,
+            _archiveTypeResolverMock.Object,
             _archiveExtractorMock.Object,
             _loggerMock.Object);
     }
@@ -52,7 +63,7 @@ public class AppTest
     {
         SetupCommandLineOptions(sourcePath: null, SomeDestinationPath, SomeConfigurationPath, false);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Warning("Source path is not provided or does not exist. The program will now exit"));
@@ -65,7 +76,7 @@ public class AppTest
     {
         LetDirectoryNotExist(SomeSourcePath);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Warning("Source path is not provided or does not exist. The program will now exit"));
@@ -78,9 +89,9 @@ public class AppTest
     {
         LetFileNotExist(SomeConfigurationPath);
         LetFileNotExist(Path.Combine(SomeSourcePath, "configuration.csv"));
-        LetFileNotExist(Path.Combine(SomeCommonAppDataDirectory, "File Extractor", "configuration.csv"));
+        LetFileNotExist(CachedConfigurationPath);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Warning("Unable to locate the configuration file. The program will now exit"));
@@ -89,11 +100,63 @@ public class AppTest
     }
 
     [Fact]
-    public async Task RunAsync_SourceDirectoryDoesNotContainZipFiles_DoesNotExtractFiles()
+    public async Task RunAsync_ConfigurationOptionIsNotProvided_UsesConfigurationFromSourceDirectory()
+    {
+        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, configurationPath: null, false);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _fileInfoProviderMock.Verify(provider => provider.EnumerateEntries(SomeConfigurationPath), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfiguredFileDoesNotExist_UsesConfigurationFromSourceDirectory()
+    {
+        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
+        LetFileNotExist(SomeOtherConfigurationPath);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _fileInfoProviderMock.Verify(provider => provider.EnumerateEntries(SomeConfigurationPath), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfiguredFileExists_UsesConfiguredFile()
+    {
+        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
+        LetFileExist(SomeOtherConfigurationPath);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeOtherConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _fileInfoProviderMock.Verify(provider => provider.EnumerateEntries(SomeOtherConfigurationPath), Times.Once);
+        _fileInfoProviderMock.Verify(provider => provider.EnumerateEntries(SomeConfigurationPath), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunAsync_OnlyCachedConfigurationExists_UsesCachedConfiguration()
+    {
+        LetFileNotExist(SomeConfigurationPath);
+        LetFileExist(CachedConfigurationPath);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(CachedConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _fileInfoProviderMock.Verify(provider => provider.EnumerateEntries(CachedConfigurationPath), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_SourceDirectoryDoesNotContainArchives_DoesNotExtractFiles()
     {
         LetGetFilesReturn(SomeSourcePath, Array.Empty<string>());
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Warning("Source directory contains no supported archive files. The program will now exit"));
@@ -102,12 +165,36 @@ public class AppTest
     }
 
     [Fact]
+    public async Task RunAsync_SourceDirectoryContainsOnlyUnsupportedFiles_DoesNotExtractFiles()
+    {
+        LetGetFilesReturn(SomeSourcePath, "file1.txt", "configuration.csv");
+
+        await RunAsync();
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Source directory contains no supported archive files. The program will now exit"));
+        _archiveExtractorMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task RunAsync_SourceDirectoryContainsUnsupportedFiles_ExtractsOnlyFromArchives()
+    {
+        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
+        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.txt", "file3.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+
+        await RunAsync();
+
+        VerifyExtractFilesAsync(new[] { "file1.zip", "file3.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
+    }
+
+    [Fact]
     public async Task RunAsync_FileDataDoesNotContainAnyEntries_DoesNotExtractFiles()
     {
         LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, Array.Empty<FileInfoData>());
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Warning("Supplied configuration contains no files to extract. The program will now exit"));
@@ -117,7 +204,7 @@ public class AppTest
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task RunAsync_SourceDirectoryContainsZipFilesAndFileDataContainsEntries_ExtractsFiles(bool cacheConfiguration)
+    public async Task RunAsync_SourceDirectoryContainsArchivesAndFileDataContainsEntries_ExtractsFiles(bool cacheConfiguration)
     {
         var archives = new[] { "file1.zip", "file2.zip" };
         var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
@@ -125,15 +212,157 @@ public class AppTest
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
         LetCacheConfigurationBe(cacheConfiguration);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Information("Starting file extraction"));
-        _archiveExtractorMock.Verify(extractor =>
-            extractor.ExtractFiles(archives, SomeDestinationPath, fileData), Times.Once);
+        VerifyExtractFilesAsync(archives, SomeDestinationPath, fileData, SomeProcessorCount);
         _loggerMock.Verify(logger =>
             logger.Information("File extraction completed"));
-        _fileSystemUtilsMock.Verify(utils => utils.Copy(SomeConfigurationPath, Path.Combine(SomeCommonAppDataDirectory, "File Extractor", "configuration.csv"), true), cacheConfiguration ? Times.Once() : Times.Never());
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(SomeConfigurationPath, CachedConfigurationPath, true), cacheConfiguration ? Times.Once() : Times.Never());
+    }
+
+    [Fact]
+    public async Task RunAsync_DestinationDoesNotExist_ExtractsFilesToSourcePath()
+    {
+        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
+        LetDirectoryNotExist(SomeDestinationPath);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+
+        await RunAsync();
+
+        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeSourcePath, fileData, SomeProcessorCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfigurationContainsDuplicateRows_PassesDistinctRowsToExtractor()
+    {
+        var fileInfo1 = new FileInfoData("", "file1.dat", "");
+        var fileInfo2 = new FileInfoData("Test", "file2.dat", "SomeDirectory");
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileInfo1, fileInfo2, fileInfo1 with { });
+
+        await RunAsync();
+
+        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeDestinationPath, new[] { fileInfo1, fileInfo2 }, SomeProcessorCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConfigurationIsRead_EnumeratesConfigurationOnce()
+    {
+        var enumerationCount = 0;
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        _fileInfoProviderMock
+            .Setup(provider => provider.EnumerateEntries(SomeConfigurationPath))
+            .Returns(() => CountEnumerations(() => enumerationCount++, new FileInfoData("", "file1.dat", "")));
+
+        await RunAsync();
+
+        Assert.Equal(1, enumerationCount);
+    }
+
+    [Fact]
+    public async Task RunAsync_MaxParallelismIsPositive_PassesItToExtractor()
+    {
+        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
+        LetMaxParallelismBe(2);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+
+        await RunAsync();
+
+        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeDestinationPath, fileData, 2);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task RunAsync_MaxParallelismIsNotPositive_UsesProcessorCount(int? maxParallelism)
+    {
+        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
+        LetMaxParallelismBe(maxParallelism);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
+
+        await RunAsync();
+
+        VerifyExtractFilesAsync(new[] { "file1.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Maximum parallelism must be a positive number. Using {ProcessorCount} instead", SomeProcessorCount),
+            maxParallelism is null ? Times.Never() : Times.Once());
+    }
+
+    [Fact]
+    public async Task RunAsync_CancellationTokenProvided_PassesItToExtractor()
+    {
+        using var cancellationTokenSource = new CancellationTokenSource();
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+
+        await _sut.RunAsync(_commandLineOptions, cancellationTokenSource.Token);
+
+        _archiveExtractorMock.Verify(extractor =>
+            extractor.ExtractFilesAsync(
+                It.IsAny<IReadOnlyCollection<string>>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<FileInfoData>>(),
+                It.IsAny<int>(),
+                cancellationTokenSource.Token), Times.Once);
+    }
+
+    [Fact]
+    public async Task RunAsync_ExtractionCancelled_LogsWarningAndDoesNotCacheConfiguration()
+    {
+        LetCacheConfigurationBe(true);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+        LetExtractFilesAsyncThrow(new OperationCanceledException());
+
+        await RunAsync();
+
+        _loggerMock.Verify(logger =>
+            logger.Warning("Extraction was cancelled. The program will now exit"), Times.Once);
+        _loggerMock.Verify(logger =>
+            logger.Error(It.IsAny<Exception>(), It.IsAny<string>(), It.IsAny<object[]>()), Times.Never);
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RunAsync_CacheConfigurationRequested_CreatesCacheDirectoryBeforeCopying()
+    {
+        var calls = new List<string>();
+        LetCacheConfigurationBe(true);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
+        _fileSystemUtilsMock
+            .Setup(utils => utils.CreateDirectory(CachedConfigurationDirectory))
+            .Callback(() => calls.Add(nameof(IFileSystemUtils.CreateDirectory)));
+        _fileSystemUtilsMock
+            .Setup(utils => utils.Copy(SomeConfigurationPath, CachedConfigurationPath, true))
+            .Callback(() => calls.Add(nameof(IFileSystemUtils.Copy)));
+
+        await RunAsync();
+
+        Assert.Equal(new[] { nameof(IFileSystemUtils.CreateDirectory), nameof(IFileSystemUtils.Copy) }, calls);
+    }
+
+    [Fact]
+    public async Task RunAsync_UsedConfigurationIsCachedConfiguration_DoesNotCopyConfiguration()
+    {
+        var cachedConfigurationPathInOtherCase = CachedConfigurationPath.ToUpperInvariant();
+        SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, cachedConfigurationPathInOtherCase, true);
+        LetFileExist(cachedConfigurationPathInOtherCase);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetEnumerateEntriesReturn(cachedConfigurationPathInOtherCase, new FileInfoData("", "file1.dat", ""));
+
+        await RunAsync();
+
+        _fileSystemUtilsMock.Verify(utils =>
+            utils.Copy(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
     }
 
     [Fact]
@@ -145,7 +374,7 @@ public class AppTest
             .Setup(provider => provider.EnumerateEntries(SomeConfigurationPath))
             .Throws(expectedException);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Error(expectedException, "An exception occurred. The program will now exit"));
@@ -156,18 +385,28 @@ public class AppTest
     public async Task RunAsync_ExtractFilesThrows_LogsException()
     {
         var expectedException = new Exception();
-        var archives = new[] { "file1.zip", "file2.zip" };
-        var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
-        LetGetFilesReturn(SomeSourcePath, archives);
-        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
-        _archiveExtractorMock
-            .Setup(extractor => extractor.ExtractFiles(archives, SomeDestinationPath, fileData))
-            .ThrowsAsync(expectedException);
+        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
+        LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.zip", string.Empty));
+        LetExtractFilesAsyncThrow(expectedException);
 
-        await _sut.RunAsync(_commandLineOptions);
+        await RunAsync();
 
         _loggerMock.Verify(logger =>
             logger.Error(expectedException, "An exception occurred. The program will now exit"));
+    }
+
+    private ValueTask RunAsync() =>
+        _sut.RunAsync(_commandLineOptions, TestContext.Current.CancellationToken);
+
+    private void VerifyExtractFilesAsync(string[] archives, string destinationPath, FileInfoData[] fileData, int maxDegreeOfParallelism) =>
+        _archiveExtractorMock.Verify(extractor =>
+            extractor.ExtractFilesAsync(archives, destinationPath, fileData, maxDegreeOfParallelism, It.IsAny<CancellationToken>()), Times.Once);
+
+    private static IEnumerable<FileInfoData> CountEnumerations(Action onEnumerate, params FileInfoData[] entries)
+    {
+        onEnumerate();
+        foreach (var entry in entries)
+            yield return entry;
     }
 
     private void SetupCommandLineOptions(string sourcePath, string destinationPath, string configurationPath, bool cacheConfiguration)
@@ -190,6 +429,19 @@ public class AppTest
         _environmentMock
             .Setup(environment => environment.GetFolderPath(SpecialFolder.CommonApplicationData))
             .Returns(path);
+
+    private void LetProcessorCountBe(int processorCount) =>
+        _environmentMock
+            .SetupGet(environment => environment.ProcessorCount)
+            .Returns(processorCount);
+
+    private void LetArchiveExtensionBeSupported(string extension)
+    {
+        var archiveType = ArchiveType.Zip;
+        _archiveTypeResolverMock
+            .Setup(resolver => resolver.TryResolve(It.Is<string>(path => path.EndsWith(extension)), out archiveType))
+            .Returns(true);
+    }
 
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock
@@ -221,8 +473,23 @@ public class AppTest
             .Setup(provider => provider.EnumerateEntries(path))
             .Returns(entries);
 
+    private void LetExtractFilesAsyncThrow(Exception exception) =>
+        _archiveExtractorMock
+            .Setup(extractor => extractor.ExtractFilesAsync(
+                It.IsAny<IReadOnlyCollection<string>>(),
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<FileInfoData>>(),
+                It.IsAny<int>(),
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(exception);
+
     private void LetCacheConfigurationBe(bool cacheConfiguration) =>
         _commandLineOptionsMock
             .Setup(options => options.CacheConfiguration)
             .Returns(cacheConfiguration);
+
+    private void LetMaxParallelismBe(int? maxParallelism) =>
+        _commandLineOptionsMock
+            .Setup(options => options.MaxParallelism)
+            .Returns(maxParallelism);
 }

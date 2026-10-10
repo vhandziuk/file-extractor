@@ -1,5 +1,5 @@
 namespace FileExtractor.Utils.Compression.Zip;
 
-public interface IZipFileExtractor : IArchiveExtractor
+public interface IZipFileExtractor : IArchiveFileExtractor
 {
 }

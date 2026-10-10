@@ -24,6 +24,7 @@ public class ArchiveEntryMatcherTest
     [InlineData("SomeName.dat", "SomeOtherName.dat")]
     [InlineData("*.txt", "SomeName.dat")]
     [InlineData("Some?Name.dat", "SomeName.dat")]
+    [InlineData("*", "")]
     public void IsMatch_NameDoesNotMatch_ReturnsFalse(string configuredName, string entryName)
     {
         var fileInfo = new FileInfoData("", configuredName, "SomeDirectory");

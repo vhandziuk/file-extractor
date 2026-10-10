@@ -10,8 +10,8 @@ internal sealed class SevenZipArchiveWrapper : IGenericArchive
     public SevenZipArchiveWrapper(IArchive sevenZipArchive) =>
         _sevenZipArchive = sevenZipArchive;
 
-    public IReadOnlyCollection<IGenericArchiveEntry> Entries =>
-        _sevenZipArchive.Entries.Select(entry => new SevenZipArchiveEntryWrapper(entry)).ToArray();
+    public IEnumerable<IGenericArchiveEntry> Entries =>
+        SharpCompressArchiveEntries.Enumerate(_sevenZipArchive, entry => new SevenZipArchiveEntryWrapper(entry));
 
     public void Dispose() =>
         _sevenZipArchive?.Dispose();

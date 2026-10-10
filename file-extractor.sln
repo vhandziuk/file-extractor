@@ -15,6 +15,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Utils.UnitTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.UnitTest", "FileExtractor.UnitTest\FileExtractor.UnitTest.csproj", "{CE2F12CA-C67C-4348-853B-E522C5A80A6C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Common.UnitTest", "FileExtractor.Common.UnitTest\FileExtractor.Common.UnitTest.csproj", "{B4356612-587C-42D9-BA88-A8BDD1E951D0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileExtractor.Data.UnitTest", "FileExtractor.Data.UnitTest\FileExtractor.Data.UnitTest.csproj", "{A3876829-EE0B-4743-BD3E-81B8D3DA97D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +52,13 @@ Global
 		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE2F12CA-C67C-4348-853B-E522C5A80A6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4356612-587C-42D9-BA88-A8BDD1E951D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4356612-587C-42D9-BA88-A8BDD1E951D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4356612-587C-42D9-BA88-A8BDD1E951D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4356612-587C-42D9-BA88-A8BDD1E951D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3876829-EE0B-4743-BD3E-81B8D3DA97D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3876829-EE0B-4743-BD3E-81B8D3DA97D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3876829-EE0B-4743-BD3E-81B8D3DA97D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3876829-EE0B-4743-BD3E-81B8D3DA97D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

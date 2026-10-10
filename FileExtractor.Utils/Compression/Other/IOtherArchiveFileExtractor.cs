@@ -1,5 +1,5 @@
 namespace FileExtractor.Utils.Compression.Other;
 
-public interface IOtherArchiveFileExtractor : IArchiveExtractor
+public interface IOtherArchiveFileExtractor : IArchiveFileExtractor
 {
 }

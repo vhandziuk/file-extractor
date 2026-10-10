@@ -65,7 +65,7 @@ test08.txt,Output,Subfolder02
 The tool can be used from command line or `powershell` as follows:
 
 ``` powershell
-  fileextractor -s "<source>" [-d "<destination>"] [-c "<configuration>"] [--cache-configuration] [--no-wait]
+  fileextractor -s "<source>" [-d "<destination>"] [-c "<configuration>"] [--cache-configuration] [--no-wait] [-p <count>]
 ```
 
 The application accepts following command line arguments:
@@ -81,6 +81,8 @@ The application accepts following command line arguments:
 
   --no-wait                Do not wait for a key press to exit the app
 
+  -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
+
   --help                   Display this help screen.
 
   --version                Display version information.
@@ -95,6 +97,10 @@ The application accepts following command line arguments:
 `--cache-configuration` /optional/ — when provided, the application will cache the used configuration `.csv` file to `%programdata%\File Extractor\configuration.csv` upon successful extraction.
 
 `--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
+
+`-p` or `--max-parallelism` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-p 1`) when the archives are on a slow hard drive.
+
+Pressing `Ctrl+C` stops the extraction after the files currently being written; partially extracted files are removed. Pressing `Ctrl+C` again terminates the application immediately.
 
 The help screen and application version can be displayed with the following commands:
 

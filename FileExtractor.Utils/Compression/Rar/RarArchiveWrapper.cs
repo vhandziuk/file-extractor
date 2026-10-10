@@ -10,8 +10,8 @@ internal sealed class RarArchiveWrapper : IGenericArchive
     public RarArchiveWrapper(IRarArchive rarArchive) =>
         _rarArchive = rarArchive;
 
-    public IReadOnlyCollection<IGenericArchiveEntry> Entries =>
-        _rarArchive.Entries.Select(entry => new RarArchiveEntryWrapper(entry)).ToArray();
+    public IEnumerable<IGenericArchiveEntry> Entries =>
+        SharpCompressArchiveEntries.Enumerate(_rarArchive, entry => new RarArchiveEntryWrapper(entry));
 
     public void Dispose() =>
         _rarArchive?.Dispose();

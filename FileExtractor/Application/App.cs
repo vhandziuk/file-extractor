@@ -6,97 +6,117 @@ using static System.Environment;
 
 namespace FileExtractor.Application;
 
-internal sealed class App : IApp
+internal sealed class App(
+    IEnvironment environment,
+    IFileSystemUtils fileSystemUtils,
+    ICsvFileInfoProvider fileInfoProvider,
+    IArchiveTypeResolver archiveTypeResolver,
+    IArchiveExtractor archiveExtractor,
+    ILogger<App> logger) : IApp
 {
-    private static readonly HashSet<string> SupportedArchiveExtensions = new() { ".zip", ".rar", ".7z", ".tar", ".bz2", ".gz", ".lz", ".xz" };
+    private const string ConfigurationFileName = "configuration.csv";
 
-    private readonly IEnvironment _environment;
-    private readonly IFileSystemUtils _fileSystemUtils;
-    private readonly ICsvFileInfoProvider _fileInfoProvider;
-    private readonly IArchiveExtractor _archiveExtractor;
-    private readonly ILogger<App> _logger;
-
-    public App(
-        IEnvironment environment,
-        IFileSystemUtils fileSystemUtils,
-        ICsvFileInfoProvider fileInfoProvider,
-        IArchiveExtractor archiveExtractor,
-        ILogger<App> logger)
-    {
-        _environment = environment;
-        _fileSystemUtils = fileSystemUtils;
-        _fileInfoProvider = fileInfoProvider;
-        _archiveExtractor = archiveExtractor;
-        _logger = logger;
-    }
-
-    public async ValueTask RunAsync(ICommandLineOptions options)
+    public async ValueTask RunAsync(ICommandLineOptions options, CancellationToken cancellationToken)
     {
         try
         {
-            var sourcePath = options.Source != null && _fileSystemUtils.DirectoryExists(options.Source)
-                ? options.Source
-                : null;
-
-            if (sourcePath == null)
-            {
-                _logger.Warning("Source path is not provided or does not exist. The program will now exit");
-                return;
-            }
-
-            var destinationPath = options.Destination != null && _fileSystemUtils.DirectoryExists(options.Destination)
-                ? options.Destination
-                : sourcePath;
-
-            var defaultConfigurationLocation = Path.Combine(sourcePath, "configuration.csv");
-            var cachedConfigurationLocation = Path.Combine(
-        _environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", "configuration.csv");
-            var configurationPath = options.Configuration != null && _fileSystemUtils.FileExists(options.Configuration)
-                ? options.Configuration
-                : _fileSystemUtils.FileExists(defaultConfigurationLocation)
-                    ? defaultConfigurationLocation
-                    : _fileSystemUtils.FileExists(cachedConfigurationLocation)
-                        ? cachedConfigurationLocation
-                        : null;
-
-            if (configurationPath == null)
-            {
-                _logger.Warning("Unable to locate the configuration file. The program will now exit");
-                return;
-            }
-
-            var archives = _fileSystemUtils
-                .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
-                .Where(filePath =>
-                    SupportedArchiveExtensions.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase));
-
-            if (!archives.Any())
-            {
-                _logger.Warning("Source directory contains no supported archive files. The program will now exit");
-                return;
-            }
-
-            var fileData = _fileInfoProvider
-                .EnumerateEntries(configurationPath);
-
-            if (!fileData.Any())
-            {
-                _logger.Warning("Supplied configuration contains no files to extract. The program will now exit");
-                return;
-            }
-
-            _logger.Information("Starting file extraction");
-            await _archiveExtractor.ExtractFiles(archives, destinationPath, fileData);
-            _logger.Information("File extraction completed");
-
-            if (options.CacheConfiguration && configurationPath != cachedConfigurationLocation)
-            {
-                _fileSystemUtils.Copy(configurationPath, cachedConfigurationLocation, true);
-            }
+            await ExtractAsync(options, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            logger.Warning("Extraction was cancelled. The program will now exit");
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "An exception occurred. The program will now exit");
+            logger.Error(ex, "An exception occurred. The program will now exit");
         }
+    }
+
+    private async Task ExtractAsync(ICommandLineOptions options, CancellationToken cancellationToken)
+    {
+        if (options.Source is not { } sourcePath || !fileSystemUtils.DirectoryExists(sourcePath))
+        {
+            logger.Warning("Source path is not provided or does not exist. The program will now exit");
+            return;
+        }
+
+        var cachedConfigurationPath = GetCachedConfigurationPath();
+        var configurationPath = FindConfigurationPath(options.Configuration, sourcePath, cachedConfigurationPath);
+        if (configurationPath is null)
+        {
+            logger.Warning("Unable to locate the configuration file. The program will now exit");
+            return;
+        }
+
+        var archives = FindArchives(sourcePath);
+        if (archives.Length == 0)
+        {
+            logger.Warning("Source directory contains no supported archive files. The program will now exit");
+            return;
+        }
+
+        // read the configuration once; every archive is matched against the same list
+        var fileData = fileInfoProvider
+            .EnumerateEntries(configurationPath)
+            .Distinct()
+            .ToArray();
+        if (fileData.Length == 0)
+        {
+            logger.Warning("Supplied configuration contains no files to extract. The program will now exit");
+            return;
+        }
+
+        logger.Information("Starting file extraction");
+        await archiveExtractor.ExtractFilesAsync(
+            archives,
+            GetDestinationPath(options.Destination, sourcePath),
+            fileData,
+            GetMaxDegreeOfParallelism(options.MaxParallelism),
+            cancellationToken);
+        logger.Information("File extraction completed");
+
+        if (options.CacheConfiguration)
+            CacheConfiguration(configurationPath, cachedConfigurationPath);
+    }
+
+    private string GetCachedConfigurationPath() =>
+        Path.Combine(environment.GetFolderPath(SpecialFolder.CommonApplicationData), "File Extractor", ConfigurationFileName);
+
+    private string? FindConfigurationPath(string? configuredPath, string sourcePath, string cachedConfigurationPath)
+    {
+        string?[] candidatePaths = [configuredPath, Path.Combine(sourcePath, ConfigurationFileName), cachedConfigurationPath];
+
+        return candidatePaths.FirstOrDefault(path => path is not null && fileSystemUtils.FileExists(path));
+    }
+
+    private string[] FindArchives(string sourcePath) =>
+        fileSystemUtils
+            .GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)
+            .Where(filePath => archiveTypeResolver.TryResolve(filePath, out _))
+            .ToArray();
+
+    private string GetDestinationPath(string? destinationPath, string sourcePath) =>
+        destinationPath is not null && fileSystemUtils.DirectoryExists(destinationPath)
+            ? destinationPath
+            : sourcePath;
+
+    private int GetMaxDegreeOfParallelism(int? maxParallelism)
+    {
+        if (maxParallelism is { } value and > 0)
+            return value;
+
+        if (maxParallelism is not null)
+            logger.Warning("Maximum parallelism must be a positive number. Using {ProcessorCount} instead", environment.ProcessorCount);
+
+        return environment.ProcessorCount;
+    }
+
+    private void CacheConfiguration(string configurationPath, string cachedConfigurationPath)
+    {
+        if (string.Equals(configurationPath, cachedConfigurationPath, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        fileSystemUtils.CreateDirectory(Path.GetDirectoryName(cachedConfigurationPath)!);
+        fileSystemUtils.Copy(configurationPath, cachedConfigurationPath, true);
     }
 }
