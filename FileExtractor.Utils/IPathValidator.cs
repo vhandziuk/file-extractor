@@ -13,4 +13,10 @@ public interface IPathValidator
     /// control characters or stream separators, no trailing dot or space, and no reserved device name.
     /// </summary>
     bool IsValidFileName(string fileName);
+
+    /// <summary>
+    /// Returns whether <paramref name="path"/> is empty or a relative path whose <c>\</c>- or <c>/</c>-separated
+    /// segments are all valid file names (see <see cref="IsValidFileName"/>), so it cannot leave the folder it is combined with.
+    /// </summary>
+    bool IsValidRelativePath(string path);
 }

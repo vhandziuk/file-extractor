@@ -14,6 +14,8 @@ public sealed class ArchiveEntryExtractor(
     private const int FileExistsHResult = unchecked((int)0x80070050);
     private const int AlreadyExistsHResult = unchecked((int)0x800700B7);
 
+    private static readonly char[] _directorySeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     public IReadOnlyCollection<FileInfoData> ExtractEntries(
         string archiveFile,
         IEnumerable<IGenericArchiveEntry> entries,
@@ -52,10 +54,17 @@ public sealed class ArchiveEntryExtractor(
             return [];
         }
 
+        var entryDirectory = GetEntryDirectory(entry, context);
+        if (!pathValidator.IsValidRelativePath(entryDirectory))
+        {
+            logger.Warning("Archive entry {Entry} has an unsafe path. Skipping it", entry.FullName);
+            return [];
+        }
+
         // Several configuration rows (e.g. a name and a wildcard) can match the same entry and folder;
         // the entry is written to each distinct folder once.
         var destinations = matchingFiles
-            .GroupBy(fileInfo => Path.Combine(context.OutputPath, fileInfo.Directory), StringComparer.OrdinalIgnoreCase);
+            .GroupBy(fileInfo => Path.Combine(context.OutputPath, fileInfo.Directory, entryDirectory), StringComparer.OrdinalIgnoreCase);
 
         var extractedFiles = new List<FileInfoData>();
         string extractedFilePath = null;
@@ -72,6 +81,19 @@ public sealed class ArchiveEntryExtractor(
         }
 
         return [.. extractedFiles];
+    }
+
+    // The folders inside the archive, without the "." and empty segments that tar archives often store
+    // ("./docs/file.txt"), so equal destinations get equal paths. They come from the untrusted archive
+    // and are validated by the caller.
+    private static string GetEntryDirectory(IGenericArchiveEntry entry, IExtractionContext context)
+    {
+        if (!context.PreserveEntryPaths)
+            return string.Empty;
+
+        var segments = entry.FullName.Split(_directorySeparators);
+
+        return string.Join(Path.DirectorySeparatorChar, segments[..^1].Where(segment => segment is not ("" or ".")));
     }
 
     private string ExtractTo(

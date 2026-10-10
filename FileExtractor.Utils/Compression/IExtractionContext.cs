@@ -17,6 +17,11 @@ public interface IExtractionContext
     bool FollowSymbolicLinks { get; }
 
     /// <summary>
+    /// Whether an entry is written to its archive folder below the destination folder instead of directly into it.
+    /// </summary>
+    bool PreserveEntryPaths { get; }
+
+    /// <summary>
     /// Reserves a destination file for the caller. Returns <see langword="false"/> when another
     /// archive entry already claimed the same path, so every destination file has exactly one writer
     /// even when archives are extracted in parallel. Safe to call from multiple threads.

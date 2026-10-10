@@ -87,4 +87,39 @@ public class PathValidatorTest
 
         Assert.False(result);
     }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("Nested")]
+    [InlineData(@"Test\Nested")]
+    [InlineData("Test/Nested")]
+    [InlineData("Some.Folder")]
+    public void IsValidRelativePath_PathIsEmptyOrHasPlainSegments_ReturnsTrue(string path)
+    {
+        var result = _sut.IsValidRelativePath(path);
+
+        Assert.True(result);
+    }
+
+    [Theory]
+    [InlineData(".")]
+    [InlineData("..")]
+    [InlineData(@"Test\..\..")]
+    [InlineData("Test/../..")]
+    [InlineData(@"\Test")]
+    [InlineData("/Test")]
+    [InlineData(@"C:\Test")]
+    [InlineData("C:Test")]
+    [InlineData(@"\\server\share")]
+    [InlineData(@"Test\\Nested")]
+    [InlineData(@"Test\")]
+    [InlineData("Test:stream")]
+    [InlineData(@"Test\CON")]
+    [InlineData(@"Test.\Nested")]
+    public void IsValidRelativePath_PathIsUnsafe_ReturnsFalse(string path)
+    {
+        var result = _sut.IsValidRelativePath(path);
+
+        Assert.False(result);
+    }
 }

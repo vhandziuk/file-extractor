@@ -12,4 +12,9 @@ public sealed record ExtractionSettings(string OutputPath, IReadOnlyList<FileInf
     /// Whether files may be written through symbolic links or junctions below <see cref="OutputPath"/>.
     /// </summary>
     public bool FollowSymbolicLinks { get; init; }
+
+    /// <summary>
+    /// Whether the folders of an entry inside the archive are recreated below the destination folder.
+    /// </summary>
+    public bool PreserveEntryPaths { get; init; }
 }

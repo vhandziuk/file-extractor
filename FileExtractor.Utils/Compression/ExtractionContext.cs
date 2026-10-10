@@ -14,5 +14,7 @@ public sealed class ExtractionContext(ExtractionSettings settings) : IExtraction
 
     public bool FollowSymbolicLinks => settings.FollowSymbolicLinks;
 
+    public bool PreserveEntryPaths => settings.PreserveEntryPaths;
+
     public bool TryClaimFilePath(string path) => _claimedFilePaths.TryAdd(path, 0);
 }

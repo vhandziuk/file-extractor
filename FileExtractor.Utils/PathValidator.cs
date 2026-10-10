@@ -3,6 +3,7 @@ namespace FileExtractor.Utils;
 public sealed class PathValidator : IPathValidator
 {
     private static readonly char[] _invalidFileNameChars = Path.GetInvalidFileNameChars();
+    private static readonly char[] _directorySeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
 
     // Windows opens a device instead of a file for these names, in any folder and with any extension
     private static readonly HashSet<string> _reservedDeviceNames = new(
@@ -31,6 +32,11 @@ public sealed class PathValidator : IPathValidator
         && !fileName.EndsWith('.')
         && !fileName.EndsWith(' ')
         && !IsReservedDeviceName(fileName);
+
+    // An empty segment ("a\\b", a leading separator) or a rooted path would not be combined below the folder as written.
+    public bool IsValidRelativePath(string path) =>
+        path.Length == 0
+        || (!Path.IsPathRooted(path) && path.Split(_directorySeparators).All(IsValidFileName));
 
     // "file.txt:stream" writes to an alternate data stream; the only valid colon is the drive's
     private static bool HasStreamSeparator(string fullPath) =>

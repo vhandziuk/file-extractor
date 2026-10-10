@@ -37,6 +37,9 @@ public class ArchiveEntryExtractorTest
             .Setup(validator => validator.IsValidFileName(It.IsAny<string>()))
             .Returns(true);
         _pathValidatorMock
+            .Setup(validator => validator.IsValidRelativePath(It.IsAny<string>()))
+            .Returns(true);
+        _pathValidatorMock
             .Setup(validator => validator.IsContained(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
         LetConfiguredFilesBe();
@@ -247,6 +250,62 @@ public class ArchiveEntryExtractorTest
         Assert.Empty(result);
         _loggerMock.Verify(logger =>
             logger.Warning("Archive entry {Entry} has an unsafe name. Skipping it", @"SomeDirectory/..\SomeName.dat"), Times.Once);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Theory]
+    [InlineData("Root/Nested/SomeName.dat", @"Root\Nested")]
+    [InlineData(@"Root\Nested\SomeName.dat", @"Root\Nested")]
+    [InlineData("./Root//Nested/SomeName.dat", @"Root\Nested")]
+    [InlineData("/Root/SomeName.dat", "Root")]
+    [InlineData("SomeName.dat", "")]
+    public void ExtractEntries_EntryPathsArePreserved_ExtractsEntryToItsArchiveFolder(string fullName, string expectedEntryDirectory)
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", fullName);
+        var fileInfo = new FileInfoData("Test", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        var expectedDirectory = Path.Combine(SomeOutputPath, "Test", expectedEntryDirectory);
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        _pathValidatorMock.Verify(validator => validator.IsValidRelativePath(expectedEntryDirectory), Times.Once);
+        _fileSystemUtilsMock.Verify(utils => utils.CreateDirectory(expectedDirectory), Times.Once);
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(expectedDirectory, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_EntryPathsAreNotPreserved_ExtractsEntryWithoutItsArchiveFolder()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "Root/Nested/SomeName.dat");
+        var fileInfo = new FileInfoData("", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+
+        ExtractEntries(entryMock.Object);
+
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_PreservedEntryPathIsUnsafe_SkipsEntry()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dll", "Root/../../SomeName.dll");
+        var fileInfo = new FileInfoData("", "*.dll", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        LetRelativePathBeUnsafe(@"Root\..\..");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Archive entry {Entry} has an unsafe path. Skipping it", "Root/../../SomeName.dll"), Times.Once);
         VerifyNothingWritten(entryMock);
     }
 
@@ -514,9 +573,19 @@ public class ArchiveEntryExtractorTest
             .Setup(guard => guard.ContainsReparsePoint(SomeOutputPath, path))
             .Returns(true);
 
+    private void LetRelativePathBeUnsafe(string path) =>
+        _pathValidatorMock
+            .Setup(validator => validator.IsValidRelativePath(path))
+            .Returns(false);
+
     private void LetSymbolicLinksBeFollowed() =>
         _contextMock
             .SetupGet(context => context.FollowSymbolicLinks)
+            .Returns(true);
+
+    private void LetEntryPathsBePreserved() =>
+        _contextMock
+            .SetupGet(context => context.PreserveEntryPaths)
             .Returns(true);
 
     private void VerifyNothingWritten(Mock<IGenericArchiveEntry> entryMock)

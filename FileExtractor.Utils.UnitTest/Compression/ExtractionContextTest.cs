@@ -32,6 +32,16 @@ public class ExtractionContextTest
         Assert.Equal(followSymbolicLinks, context.FollowSymbolicLinks);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_PreserveEntryPathsProvided_ExposesIt(bool preserveEntryPaths)
+    {
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { PreserveEntryPaths = preserveEntryPaths });
+
+        Assert.Equal(preserveEntryPaths, context.PreserveEntryPaths);
+    }
+
     [Fact]
     public void TryClaimFilePath_PathIsNotClaimed_ReturnsTrue()
     {
