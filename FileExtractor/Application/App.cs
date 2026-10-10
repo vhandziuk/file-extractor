@@ -71,13 +71,14 @@ internal sealed class App(
             logger.Warning("Symbolic links and junctions below the destination path are followed");
 
         logger.Information("Starting file extraction");
-        await archiveExtractor.ExtractFilesAsync(
-            archives,
+        var settings = new ExtractionSettings(
             GetDestinationPath(options.Destination, sourcePath),
             fileData,
-            GetMaxDegreeOfParallelism(options.MaxParallelism),
-            options.FollowSymbolicLinks,
-            cancellationToken);
+            GetMaxDegreeOfParallelism(options.MaxParallelism))
+        {
+            FollowSymbolicLinks = options.FollowSymbolicLinks
+        };
+        await archiveExtractor.ExtractFilesAsync(archives, settings, cancellationToken);
         logger.Information("File extraction completed");
 
         if (options.CacheConfiguration)

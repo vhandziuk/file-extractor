@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FileExtractor.Application;
@@ -330,10 +331,7 @@ public class AppTest
         _archiveExtractorMock.Verify(extractor =>
             extractor.ExtractFilesAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
-                It.IsAny<string>(),
-                It.IsAny<IReadOnlyList<FileInfoData>>(),
-                It.IsAny<int>(),
-                followSymbolicLinks,
+                It.Is<ExtractionSettings>(settings => settings.FollowSymbolicLinks == followSymbolicLinks),
                 It.IsAny<CancellationToken>()), Times.Once);
         _loggerMock.Verify(logger =>
             logger.Warning("Symbolic links and junctions below the destination path are followed"),
@@ -369,10 +367,7 @@ public class AppTest
         _archiveExtractorMock.Verify(extractor =>
             extractor.ExtractFilesAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
-                It.IsAny<string>(),
-                It.IsAny<IReadOnlyList<FileInfoData>>(),
-                It.IsAny<int>(),
-                It.IsAny<bool>(),
+                It.IsAny<ExtractionSettings>(),
                 cancellationTokenSource.Token), Times.Once);
     }
 
@@ -483,7 +478,13 @@ public class AppTest
 
     private void VerifyExtractFilesAsync(string[] archives, string destinationPath, FileInfoData[] fileData, int maxDegreeOfParallelism) =>
         _archiveExtractorMock.Verify(extractor =>
-            extractor.ExtractFilesAsync(archives, destinationPath, fileData, maxDegreeOfParallelism, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+            extractor.ExtractFilesAsync(
+                archives,
+                It.Is<ExtractionSettings>(settings =>
+                    settings.OutputPath == destinationPath
+                    && settings.Files.SequenceEqual(fileData)
+                    && settings.MaxDegreeOfParallelism == maxDegreeOfParallelism),
+                It.IsAny<CancellationToken>()), Times.Once);
 
     private static IEnumerable<FileInfoData> CountEnumerations(Action onEnumerate, params FileInfoData[] entries)
     {
@@ -560,10 +561,7 @@ public class AppTest
         _archiveExtractorMock
             .Setup(extractor => extractor.ExtractFilesAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
-                It.IsAny<string>(),
-                It.IsAny<IReadOnlyList<FileInfoData>>(),
-                It.IsAny<int>(),
-                It.IsAny<bool>(),
+                It.IsAny<ExtractionSettings>(),
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(exception);
 

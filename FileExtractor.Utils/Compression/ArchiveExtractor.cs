@@ -14,20 +14,17 @@ public sealed class ArchiveExtractor(
 {
     public async Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(
         IReadOnlyCollection<string> archiveFiles,
-        string outputPath,
-        IReadOnlyList<FileInfoData> fileData,
-        int maxDegreeOfParallelism,
-        bool followSymbolicLinks,
+        ExtractionSettings settings,
         CancellationToken cancellationToken)
     {
         logger.Information("Processing files");
 
-        var context = new ExtractionContext(outputPath, fileData, followSymbolicLinks);
+        var context = new ExtractionContext(settings);
         var extractedFiles = new ConcurrentBag<FileInfoData>();
 
         await taskRunner.ForEachAsync(
             OrderByLargestFirst(archiveFiles),
-            maxDegreeOfParallelism,
+            settings.MaxDegreeOfParallelism,
             (archiveFile, token) =>
             {
                 foreach (var fileInfo in ExtractArchive(archiveFile, context, token))
@@ -38,7 +35,7 @@ public sealed class ArchiveExtractor(
             cancellationToken);
 
         var result = extractedFiles.ToHashSet();
-        ReportMissingFiles(fileData, result);
+        ReportMissingFiles(settings.Files, result);
 
         return result;
     }

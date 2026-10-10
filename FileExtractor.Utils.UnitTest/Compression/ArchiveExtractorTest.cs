@@ -104,7 +104,7 @@ public class ArchiveExtractorTest
     {
         using var cancellationTokenSource = new CancellationTokenSource();
 
-        await _sut.ExtractFilesAsync([SomeZipArchive], SomeOutputPath, [SomeFileInfo1], SomeMaxDegreeOfParallelism, false, cancellationTokenSource.Token);
+        await _sut.ExtractFilesAsync([SomeZipArchive], GetSettings([SomeFileInfo1]), cancellationTokenSource.Token);
 
         _taskRunnerMock.Verify(runner =>
             runner.ForEachAsync(
@@ -213,7 +213,10 @@ public class ArchiveExtractorTest
     }
 
     private Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(string[] archives, FileInfoData[] fileData, bool followSymbolicLinks = false) =>
-        _sut.ExtractFilesAsync(archives, SomeOutputPath, fileData, SomeMaxDegreeOfParallelism, followSymbolicLinks, TestContext.Current.CancellationToken);
+        _sut.ExtractFilesAsync(archives, GetSettings(fileData) with { FollowSymbolicLinks = followSymbolicLinks }, TestContext.Current.CancellationToken);
+
+    private static ExtractionSettings GetSettings(FileInfoData[] fileData) =>
+        new(SomeOutputPath, fileData, SomeMaxDegreeOfParallelism);
 
     private void LetTaskRunnerRunSequentially() =>
         _taskRunnerMock
