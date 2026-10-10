@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using FileExtractor.Application;
 using FileExtractor.DiRegistration;
 

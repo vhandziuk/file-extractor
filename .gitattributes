@@ -1,0 +1,5 @@
+# Store text files with LF in the repository and check them out with CRLF on every machine:
+# the project is Windows-only (Visual Studio, Inno Setup, PowerShell)
+* text=auto eol=crlf
+
+*.ico binary
