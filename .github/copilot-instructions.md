@@ -1,6 +1,6 @@
 # File Extractor – coding instructions
 
-Distilled for this repository from the awesome-copilot C#, .NET architecture, Clean Code and Object Calisthenics guidance. Only rules that apply to this codebase are kept.
+Distilled for this repository from the [awesome-copilot](https://github.com/github/awesome-copilot) C#, .NET architecture, Clean Code and Object Calisthenics guidance (Copyright GitHub, Inc., MIT License; see `THIRD-PARTY-NOTICES.md`). Only rules that apply to this codebase are kept.
 
 ## Project overview
 

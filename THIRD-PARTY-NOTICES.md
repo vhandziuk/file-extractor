@@ -25,6 +25,12 @@ These NuGet packages are shipped with File Extractor (application binaries and i
 |---|---|---|---|---|
 | Inno Setup Dependency Installer | `Setup/CodeDependencies.iss` | Copyright (c) 2009-2026 DomGries | [MIT](#mit-license) | https://github.com/DomGries/InnoDependencyInstaller (commit `4f0d02526c772a5da51a14345f11cdd3a89bd0de`) |
 
+## Documentation
+
+| Component | Location | Copyright | License | Source |
+|---|---|---|---|---|
+| awesome-copilot instructions and agents (`csharp.instructions.md`, `dotnet-architecture-good-practices.instructions.md`, `object-calisthenics.instructions.md`, `wg-code-alchemist.agent.md`) | `.github/copilot-instructions.md` (adapted) | Copyright GitHub, Inc. | [MIT](#mit-license) | https://github.com/github/awesome-copilot |
+
 ## Build tools
 
 These tools are used to build the application and are not redistributed with it.
@@ -50,8 +56,8 @@ These NuGet packages are only used to build and run the unit tests and are not r
 
 ### MIT License
 
-Applies to CommandLineParser, SharpCompress, StrongInject and Inno Setup Dependency
-Installer, with the respective copyright notices listed above.
+Applies to CommandLineParser, SharpCompress, StrongInject, Inno Setup Dependency
+Installer and awesome-copilot, with the respective copyright notices listed above.
 
 ```
 Copyright (c) <year> <copyright holders>
