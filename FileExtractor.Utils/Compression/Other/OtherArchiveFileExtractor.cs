@@ -40,7 +40,7 @@ public sealed class OtherArchiveFileExtractor : IOtherArchiveFileExtractor
                 foreach (var archive in archives.AsParallel())
                 {
                     using (var stream = File.OpenRead(archive))
-                    using (var reader = ReaderFactory.Open(stream))
+                    using (var reader = ReaderFactory.OpenReader(stream))
                     {
                         while (reader.MoveToNextEntry())
                         {

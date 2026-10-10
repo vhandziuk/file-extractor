@@ -1,15 +1,14 @@
 using FileExtractor.Utils.Compression.Common;
 using SharpCompress.Archives;
-using SharpCompress.Archives.Rar;
 using SharpCompress.Common;
 
 namespace FileExtractor.Utils.Compression.Rar;
 
 internal sealed class RarArchiveEntryWrapper : IGenericArchiveEntry
 {
-    private readonly RarArchiveEntry _rarArchiveEntry;
+    private readonly IArchiveEntry _rarArchiveEntry;
 
-    public RarArchiveEntryWrapper(RarArchiveEntry rarArchiveEntry) =>
+    public RarArchiveEntryWrapper(IArchiveEntry rarArchiveEntry) =>
         _rarArchiveEntry = rarArchiveEntry;
 
     public string Name => Path.GetFileName(_rarArchiveEntry.Key);

@@ -6,5 +6,5 @@ namespace FileExtractor.Utils.Compression.SevenZip;
 public sealed class SevenZipFileWrapper : ISevenZipFile
 {
     public IGenericArchive OpenRead(string archiveFileName) =>
-        new SevenZipArchiveWrapper(SevenZipArchive.Open(archiveFileName));
+        new SevenZipArchiveWrapper(SevenZipArchive.OpenArchive(archiveFileName));
 }

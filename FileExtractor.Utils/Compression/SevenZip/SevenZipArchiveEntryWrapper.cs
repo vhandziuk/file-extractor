@@ -1,15 +1,14 @@
 using FileExtractor.Utils.Compression.Common;
 using SharpCompress.Archives;
-using SharpCompress.Archives.SevenZip;
 using SharpCompress.Common;
 
 namespace FileExtractor.Utils.Compression.SevenZip;
 
 internal sealed class SevenZipArchiveEntryWrapper : IGenericArchiveEntry
 {
-    private readonly SevenZipArchiveEntry _sevenZipArchiveEntry;
+    private readonly IArchiveEntry _sevenZipArchiveEntry;
 
-    public SevenZipArchiveEntryWrapper(SevenZipArchiveEntry rarArchiveEntry) =>
+    public SevenZipArchiveEntryWrapper(IArchiveEntry rarArchiveEntry) =>
         _sevenZipArchiveEntry = rarArchiveEntry;
 
     public string Name => Path.GetFileName(_sevenZipArchiveEntry.Key);
