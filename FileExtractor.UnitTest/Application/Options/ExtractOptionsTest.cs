@@ -40,6 +40,20 @@ public class ExtractOptionsTest
         Assert.IsType<NotParsed<object>>(result);
     }
 
+    [Fact]
+    public void Examples_FormattedAsHelpShowsThem_ParseBackToSameOptions()
+    {
+        foreach (var example in ExtractOptions.Examples)
+        {
+            var commandLine = _parser.FormatCommandLine((ExtractOptions)example.Sample);
+
+            var result = ParseArguments(commandLine.Split(' '));
+
+            var options = Assert.IsType<ExtractOptions>(Assert.IsType<Parsed<object>>(result).Value);
+            Assert.Equal(commandLine, _parser.FormatCommandLine(options));
+        }
+    }
+
     private ParserResult<object> ParseArguments(params string[] args) =>
         _parser.ParseArguments(args, typeof(ConfigurationOptions), typeof(ExtractOptions), typeof(ListOptions));
 }

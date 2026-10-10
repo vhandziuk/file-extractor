@@ -27,6 +27,20 @@ public class ConfigurationOptionsTest
         Assert.IsType<NotParsed<object>>(result);
     }
 
+    [Fact]
+    public void Examples_FormattedAsHelpShowsThem_ParseBackToSameOptions()
+    {
+        foreach (var example in ConfigurationOptions.Examples)
+        {
+            var commandLine = _parser.FormatCommandLine((ConfigurationOptions)example.Sample);
+
+            var result = ParseArguments(commandLine.Split(' '));
+
+            var options = Assert.IsType<ConfigurationOptions>(Assert.IsType<Parsed<object>>(result).Value);
+            Assert.Equal(commandLine, _parser.FormatCommandLine(options));
+        }
+    }
+
     private ParserResult<object> ParseArguments(params string[] args) =>
         _parser.ParseArguments(args, typeof(ConfigurationOptions), typeof(ExtractOptions), typeof(ListOptions));
 }

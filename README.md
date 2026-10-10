@@ -125,7 +125,7 @@ The verb accepts following command line arguments:
 
   -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
 
-  --follow-symlinks        Extract files into folders below the destination that are symbolic links or junctions
+  --follow-symlinks        Extract files into folders below the destination directory that are symbolic links or junctions
 
   --no-wait                Do not wait for a key press to exit the app
 ```
@@ -161,7 +161,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
   -o, --output             Path to the output directory, created when missing (default: current directory)
 
-  -x, --exclude            Files not to extract, in the same format as the files to extract
+  -x, --exclude            Files not to extract, in the same format as the files to extract. Takes all the values that follow it, so put it after the archive and the files, for example: fileextractor a.zip *.txt -x *.tmp *.log
 
   --flat                   Extract all files directly into the output directory, without the folders of the archive
 
@@ -171,7 +171,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
   -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
 
-  --follow-symlinks        Extract files into folders below the destination that are symbolic links or junctions
+  --follow-symlinks        Extract files into folders below the output directory that are symbolic links or junctions
 
   --no-wait                Do not wait for a key press to exit the app
 ```

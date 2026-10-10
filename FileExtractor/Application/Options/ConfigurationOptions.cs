@@ -1,4 +1,5 @@
 using CommandLine;
+using CommandLine.Text;
 
 namespace FileExtractor.Application.Options;
 
@@ -15,4 +16,15 @@ internal sealed class ConfigurationOptions : ExtractionOptionsBase, IConfigurati
     public bool Recursive { get; set; }
     [Option("cache-configuration", Required = false, HelpText = "Save current configuration as default")]
     public bool CacheConfiguration { get; set; }
+    [Option("follow-symlinks", Required = false, HelpText = "Extract files into folders below the destination directory that are symbolic links or junctions")]
+    public override bool FollowSymbolicLinks { get; set; }
+
+    [Usage(ApplicationAlias = "fileextractor")]
+    public static IEnumerable<Example> Examples =>
+    [
+        new("Extract the files listed in C:\\Archives\\configuration.csv from the archives in C:\\Archives",
+            new ConfigurationOptions { Source = @"C:\Archives" }),
+        new("Extract the files listed in a configuration file from the archives in a folder and its subfolders into another folder",
+            new ConfigurationOptions { Source = @"C:\Archives", Destination = @"C:\Output", Configuration = @"C:\Config\files.csv", Recursive = true })
+    ];
 }
