@@ -35,6 +35,7 @@ When editing existing code, match the surrounding style. Don't refactor unrelate
 
 ## Naming and formatting
 
+- Follow `.editorconfig` (UTF-8 without BOM, CRLF, 4-space indentation, 2 for XML/YAML, tabs in `.sln`, C# style and naming rules). `.gitattributes` keeps LF in the repository and CRLF in working copies.
 - PascalCase for types, methods, properties and constants; camelCase for locals and parameters; `_camelCase` for private fields; `I` prefix for interfaces.
 - Allman braces: the opening brace goes on its own line for types, members and blocks.
 - Return statements that end a method go on their own line.
