@@ -30,7 +30,7 @@ public class AppTest
     private readonly Mock<IEnvironment> _environmentMock = new();
     private readonly Mock<IFileSystemUtils> _fileSystemUtilsMock = new();
     private readonly Mock<ICsvFileInfoProvider> _fileInfoProviderMock = new();
-    private readonly Mock<IArchiveTypeResolver> _archiveTypeResolverMock = new();
+    private readonly Mock<IArchiveFinder> _archiveFinderMock = new();
     private readonly Mock<IArchiveExtractor> _archiveExtractorMock = new();
     private readonly Mock<IReparsePointGuard> _reparsePointGuardMock = new();
     private readonly Mock<ILogger<App>> _loggerMock = new();
@@ -46,7 +46,6 @@ public class AppTest
 
         LetLocalAppDataDirectoryBe(SomeLocalAppDataDirectory);
         LetProcessorCountBe(SomeProcessorCount);
-        LetArchiveExtensionBeSupported(".zip");
         LetDirectoryExist(SomeSourcePath);
         LetDirectoryExist(SomeDestinationPath);
         LetFileExist(SomeConfigurationPath);
@@ -55,7 +54,7 @@ public class AppTest
             _environmentMock.Object,
             _fileSystemUtilsMock.Object,
             _fileInfoProviderMock.Object,
-            _archiveTypeResolverMock.Object,
+            _archiveFinderMock.Object,
             _archiveExtractorMock.Object,
             _reparsePointGuardMock.Object,
             _loggerMock.Object);
@@ -106,7 +105,7 @@ public class AppTest
     public async Task RunAsync_ConfigurationOptionIsNotProvided_UsesConfigurationFromSourceDirectory()
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, configurationPath: null, false);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -119,7 +118,7 @@ public class AppTest
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
         LetFileNotExist(SomeOtherConfigurationPath);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -132,7 +131,7 @@ public class AppTest
     {
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, SomeOtherConfigurationPath, false);
         LetFileExist(SomeOtherConfigurationPath);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeOtherConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -146,7 +145,7 @@ public class AppTest
     {
         LetFileNotExist(SomeConfigurationPath);
         LetFileExist(CachedConfigurationPath);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(CachedConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -157,7 +156,7 @@ public class AppTest
     [Fact]
     public async Task RunAsync_SourceDirectoryDoesNotContainArchives_DoesNotExtractFiles()
     {
-        LetGetFilesReturn(SomeSourcePath, Array.Empty<string>());
+        LetArchivesBe(SomeSourcePath);
 
         await RunAsync();
 
@@ -168,52 +167,27 @@ public class AppTest
     }
 
     [Theory]
-    [InlineData(false, SearchOption.TopDirectoryOnly)]
-    [InlineData(true, SearchOption.AllDirectories)]
-    public async Task RunAsync_RecursiveOptionProvided_SearchesArchivesWithMatchingScope(bool recursive, SearchOption expectedSearchOption)
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RunAsync_RecursiveOptionProvided_SearchesArchivesWithMatchingScope(bool recursive)
     {
         var fileData = new[] { new FileInfoData("", "file1.dat", "") };
         LetRecursiveBe(recursive);
-        _fileSystemUtilsMock
-            .Setup(utils => utils.GetFiles(SomeSourcePath, "*.*", expectedSearchOption))
+        _archiveFinderMock
+            .Setup(finder => finder.FindArchives(SomeSourcePath, recursive))
             .Returns(["file1.zip", @"Nestedile2.zip"]);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
         await RunAsync();
 
-        _fileSystemUtilsMock.Verify(utils =>
-            utils.GetFiles(SomeSourcePath, "*.*", expectedSearchOption), Times.Once);
+        _archiveFinderMock.Verify(finder => finder.FindArchives(SomeSourcePath, recursive), Times.Once);
         VerifyExtractFilesAsync(new[] { "file1.zip", @"Nestedile2.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
-    }
-
-    [Fact]
-    public async Task RunAsync_SourceDirectoryContainsOnlyUnsupportedFiles_DoesNotExtractFiles()
-    {
-        LetGetFilesReturn(SomeSourcePath, "file1.txt", "configuration.csv");
-
-        await RunAsync();
-
-        _loggerMock.Verify(logger =>
-            logger.Warning("Source directory contains no supported archive files. The program will now exit"));
-        _archiveExtractorMock.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task RunAsync_SourceDirectoryContainsUnsupportedFiles_ExtractsOnlyFromArchives()
-    {
-        var fileData = new[] { new FileInfoData("", "file1.dat", "") };
-        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.txt", "file3.zip");
-        LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
-
-        await RunAsync();
-
-        VerifyExtractFilesAsync(new[] { "file1.zip", "file3.zip" }, SomeDestinationPath, fileData, SomeProcessorCount);
     }
 
     [Fact]
     public async Task RunAsync_FileDataDoesNotContainAnyEntries_DoesNotExtractFiles()
     {
-        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip", "file2.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, Array.Empty<FileInfoData>());
 
         await RunAsync();
@@ -230,7 +204,7 @@ public class AppTest
     {
         var archives = new[] { "file1.zip", "file2.zip" };
         var fileData = new[] { new FileInfoData("", "file1.zip", string.Empty) };
-        LetGetFilesReturn(SomeSourcePath, archives);
+        LetArchivesBe(SomeSourcePath, archives);
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
         LetCacheConfigurationBe(cacheConfiguration);
 
@@ -250,7 +224,7 @@ public class AppTest
     {
         var fileData = new[] { new FileInfoData("", "file1.dat", "") };
         LetDirectoryNotExist(SomeDestinationPath);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
         await RunAsync();
@@ -263,7 +237,7 @@ public class AppTest
     {
         var fileInfo1 = new FileInfoData("", "file1.dat", "");
         var fileInfo2 = new FileInfoData("Test", "file2.dat", "SomeDirectory");
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileInfo1, fileInfo2, fileInfo1 with { });
 
         await RunAsync();
@@ -275,7 +249,7 @@ public class AppTest
     public async Task RunAsync_ConfigurationIsRead_EnumeratesConfigurationOnce()
     {
         var enumerationCount = 0;
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         _fileInfoProviderMock
             .Setup(provider => provider.EnumerateEntries(SomeConfigurationPath))
             .Returns(() => CountEnumerations(() => enumerationCount++, new FileInfoData("", "file1.dat", "")));
@@ -290,7 +264,7 @@ public class AppTest
     {
         var fileData = new[] { new FileInfoData("", "file1.dat", "") };
         LetMaxParallelismBe(2);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
         await RunAsync();
@@ -306,7 +280,7 @@ public class AppTest
     {
         var fileData = new[] { new FileInfoData("", "file1.dat", "") };
         LetMaxParallelismBe(maxParallelism);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, fileData);
 
         await RunAsync();
@@ -323,7 +297,7 @@ public class AppTest
     public async Task RunAsync_FollowSymbolicLinksOptionProvided_PassesItToExtractor(bool followSymbolicLinks)
     {
         LetFollowSymbolicLinksBe(followSymbolicLinks);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -343,7 +317,7 @@ public class AppTest
     {
         LetFollowSymbolicLinksBe(true);
         LetCacheConfigurationBe(true);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
         _reparsePointGuardMock
             .Setup(guard => guard.ContainsReparsePoint(SomeLocalAppDataDirectory, CachedConfigurationPath))
@@ -359,7 +333,7 @@ public class AppTest
     public async Task RunAsync_CancellationTokenProvided_PassesItToExtractor()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
 
         await _sut.RunAsync(_commandLineOptions, cancellationTokenSource.Token);
@@ -375,7 +349,7 @@ public class AppTest
     public async Task RunAsync_ExtractionCancelled_LogsWarningAndDoesNotCacheConfiguration()
     {
         LetCacheConfigurationBe(true);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
         LetExtractFilesAsyncThrow(new OperationCanceledException());
 
@@ -394,7 +368,7 @@ public class AppTest
     {
         var calls = new List<string>();
         LetCacheConfigurationBe(true);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
         _fileSystemUtilsMock
             .Setup(utils => utils.CreateDirectory(CachedConfigurationDirectory))
@@ -412,7 +386,7 @@ public class AppTest
     public async Task RunAsync_CachedConfigurationPathContainsReparsePoint_DoesNotCacheConfiguration()
     {
         LetCacheConfigurationBe(true);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.dat", ""));
         _reparsePointGuardMock
             .Setup(guard => guard.ContainsReparsePoint(SomeLocalAppDataDirectory, CachedConfigurationPath))
@@ -434,7 +408,7 @@ public class AppTest
         var cachedConfigurationPathInOtherCase = CachedConfigurationPath.ToUpperInvariant();
         SetupCommandLineOptions(SomeSourcePath, SomeDestinationPath, cachedConfigurationPathInOtherCase, true);
         LetFileExist(cachedConfigurationPathInOtherCase);
-        LetGetFilesReturn(SomeSourcePath, "file1.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip");
         LetEnumerateEntriesReturn(cachedConfigurationPathInOtherCase, new FileInfoData("", "file1.dat", ""));
 
         await RunAsync();
@@ -447,7 +421,7 @@ public class AppTest
     public async Task RunAsync_EnumerateEntriesThrows_DoesNotExtractFiles()
     {
         var expectedException = new IOException();
-        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip", "file2.zip");
         _fileInfoProviderMock
             .Setup(provider => provider.EnumerateEntries(SomeConfigurationPath))
             .Throws(expectedException);
@@ -463,7 +437,7 @@ public class AppTest
     public async Task RunAsync_ExtractFilesThrows_LogsException()
     {
         var expectedException = new Exception();
-        LetGetFilesReturn(SomeSourcePath, "file1.zip", "file2.zip");
+        LetArchivesBe(SomeSourcePath, "file1.zip", "file2.zip");
         LetEnumerateEntriesReturn(SomeConfigurationPath, new FileInfoData("", "file1.zip", string.Empty));
         LetExtractFilesAsyncThrow(expectedException);
 
@@ -519,14 +493,6 @@ public class AppTest
             .SetupGet(environment => environment.ProcessorCount)
             .Returns(processorCount);
 
-    private void LetArchiveExtensionBeSupported(string extension)
-    {
-        var archiveType = ArchiveType.Zip;
-        _archiveTypeResolverMock
-            .Setup(resolver => resolver.TryResolve(It.Is<string>(path => path.EndsWith(extension)), out archiveType))
-            .Returns(true);
-    }
-
     private void LetDirectoryExist(string path) =>
         _fileSystemUtilsMock
             .Setup(utils => utils.DirectoryExists(path))
@@ -547,10 +513,10 @@ public class AppTest
             .Setup(utils => utils.FileExists(filePath))
             .Returns(false);
 
-    private void LetGetFilesReturn(string path, params string[] fileNames) =>
-        _fileSystemUtilsMock
-            .Setup(utils => utils.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly))
-            .Returns(fileNames);
+    private void LetArchivesBe(string path, params string[] archives) =>
+        _archiveFinderMock
+            .Setup(finder => finder.FindArchives(path, It.IsAny<bool>()))
+            .Returns(archives);
 
     private void LetEnumerateEntriesReturn(string path, params FileInfoData[] entries) =>
         _fileInfoProviderMock

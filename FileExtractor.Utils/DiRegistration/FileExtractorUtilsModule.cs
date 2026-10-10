@@ -27,6 +27,7 @@ namespace FileExtractor.Utils.DiRegistration;
 [Register(typeof(ArchiveEntryMatcher), Scope.SingleInstance, typeof(IArchiveEntryMatcher))]
 [Register(typeof(ArchiveEntryExtractor), Scope.SingleInstance, typeof(IArchiveEntryExtractor))]
 [Register(typeof(ArchiveTypeResolver), Scope.SingleInstance, typeof(IArchiveTypeResolver))]
+[Register(typeof(ArchiveFinder), Scope.SingleInstance, typeof(IArchiveFinder))]
 [Register(typeof(ArchiveExtractorFactory), Scope.SingleInstance, typeof(IArchiveExtractorFactory))]
 [Register(typeof(ArchiveExtractor), Scope.SingleInstance, typeof(IArchiveExtractor))]
 public sealed class FileExtractorUtilsModule
