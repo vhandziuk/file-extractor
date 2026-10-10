@@ -6,12 +6,36 @@
 #define FileExtractorAppExeName "FileExtractor.exe"
 
 [Registry]
-Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor"; ValueType: string; ValueData: "File E&xtractor"; Flags: uninsdeletekey
-Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" -s ""%V"""
-Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: string; ValueData: "File E&xtractor"; Flags: uninsdeletekey
-Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
-Root: HKCR; Subkey: "Directory\shell\File_Extractor\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" -s ""%V"""
+; the single "File Extractor" entry of earlier versions, which ran the configuration mode
+Root: HKCR; Subkey: "Directory\Background\shell\File_Extractor"; ValueType: none; Flags: deletekey
+Root: HKCR; Subkey: "Directory\shell\File_Extractor"; ValueType: none; Flags: deletekey
+
+; the archive types of ArchiveTypeResolver
+#dim ArchiveExtensions[8] {".zip", ".rar", ".7z", ".tar", ".bz2", ".gz", ".lz", ".xz"}
+#dim FolderShellKeys[2] {"Directory\shell", "Directory\Background\shell"}
+#define i
+
+; "%1\.." is the folder of the archive: the application resolves the output path to a full path
+#sub RegisterArchiveVerbs
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere"; ValueType: string; ValueData: "File Extractor: Extract here"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%1"" -o ""%1\.."""
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder"; ValueType: string; ValueData: "File Extractor: Extract to subfolder"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "SystemFileAssociations\{#ArchiveExtensions[i]}\shell\FileExtractor.ExtractToFolder\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%1"" -o ""%1\.."" --archive-folder"
+#endsub
+
+#sub RegisterFolderVerbs
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere"; ValueType: string; ValueData: "File Extractor: Extract archives here"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractArchivesHere\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" x ""%V"" -o ""%V"""
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueData: "File Extractor: Extract using configuration"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#FileExtractorAppExeName}"
+Root: HKCR; Subkey: "{#FolderShellKeys[i]}\FileExtractor.ExtractWithConfiguration\command"; ValueType: string; ValueData: """{app}\{#FileExtractorAppExeName}"" config -s ""%V"""
+#endsub
+
+#for {i = 0; i < DimOf(ArchiveExtensions); i++} RegisterArchiveVerbs
+#for {i = 0; i < DimOf(FolderShellKeys); i++} RegisterFolderVerbs
 
 [Code]
 #include 'Utils.pas'

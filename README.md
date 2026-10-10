@@ -91,7 +91,14 @@ The help screen and application version can be displayed with the following comm
 
 Pressing `Ctrl+C` stops the extraction after the files currently being written; partially extracted files are removed. Pressing `Ctrl+C` again terminates the application immediately.
 
-**_NOTE:_** The tool creates the "File Extractor" folder context menu entry. When executed, the selected folder will be used as the `--source` argument of the `config` verb, `<destination>` and `<configuration>` will have their default values, and only archives located directly in the selected folder are processed (see the description below).
+**_NOTE:_** The installer adds the following entries to the Explorer context menu (on Windows 11, under "Show more options"):
+
+| Right-click on | Entry | Runs |
+| --- | --- | --- |
+| A supported archive | File Extractor: Extract here | `fileextractor x "<archive>" -o "<folder of the archive>"` |
+| A supported archive | File Extractor: Extract to subfolder | the same with `--archive-folder`, so the files go to a subfolder named after the archive |
+| A folder or the background of a folder | File Extractor: Extract archives here | `fileextractor x "<folder>" -o "<folder>"`: every archive located directly in the folder, into that folder |
+| A folder or the background of a folder | File Extractor: Extract using configuration | `fileextractor config -s "<folder>"`, with the default `<destination>` and `<configuration>` |
 
 **_NOTE:_** The tool generates log files under `%localappdata%\File Extractor\Logs` of the current user. The files can be used to check extended application output and error messages.
 
