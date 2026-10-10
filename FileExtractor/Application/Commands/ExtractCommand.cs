@@ -16,12 +16,13 @@ internal sealed class ExtractCommand(
     ILogger<ExtractCommand> logger) : IExtractCommand
 {
     private const string AllFilesPattern = "*";
+    private const char PatternListSeparator = ',';
 
     public async Task RunAsync(IExtractOptions options, CancellationToken cancellationToken)
     {
         // parsed first, so a mistyped pattern fails before anything is written
         var files = ParsePatterns(options.Files.DefaultIfEmpty(AllFilesPattern));
-        var excludedFiles = ParsePatterns(options.Exclude);
+        var excludedFiles = ParsePatterns(SplitPatternList(options.Exclude));
 
         var archives = archiveFinder.FindArchives(options.Archive, options.Recursive);
         if (archives.Length == 0)
@@ -44,6 +45,9 @@ internal sealed class ExtractCommand(
         await archiveExtractor.ExtractFilesAsync(archives, settings, cancellationToken);
         logger.Information("File extraction completed");
     }
+
+    private static string[] SplitPatternList(string? patternList) =>
+        patternList?.Split(PatternListSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
     private FileInfoData[] ParsePatterns(IEnumerable<string> patterns) =>
         [.. patterns.Select(filePatternParser.Parse).Distinct()];

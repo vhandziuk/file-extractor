@@ -40,7 +40,7 @@ public class ExtractCommandTest
         _optionsMock.SetupGet(options => options.Archive).Returns(SomeArchivePath);
         _optionsMock.SetupGet(options => options.Output).Returns(SomeOutputPath);
         LetFilesBe();
-        LetExclusionsBe();
+        LetExclusionsBe(null);
         _environmentMock.SetupGet(environment => environment.CurrentDirectory).Returns(SomeCurrentDirectory);
         _filePatternParserMock
             .Setup(parser => parser.Parse(It.IsAny<string>()))
@@ -122,19 +122,28 @@ public class ExtractCommandTest
         VerifySettings(settings => settings.Files.SequenceEqual(new[] { new FileInfoData("", "*.txt", ""), parsedFile }));
     }
 
-    [Fact]
-    public async Task RunAsync_ExclusionsProvided_PassesParsedExclusions()
+    [Theory]
+    [InlineData("*.tmp,*.log")]
+    [InlineData(" *.tmp , *.log ")]
+    [InlineData(",*.tmp,,*.log,")]
+    [InlineData("*.tmp,*.log,*.tmp")]
+    public async Task RunAsync_ExclusionListProvided_PassesDistinctParsedExclusions(string exclusionList)
     {
-        LetExclusionsBe("*.tmp", "*.log");
+        LetExclusionsBe(exclusionList);
 
         await RunAsync();
 
         VerifySettings(settings => settings.ExcludedFiles.SequenceEqual(new[] { new FileInfoData("", "*.tmp", ""), new FileInfoData("", "*.log", "") }));
     }
 
-    [Fact]
-    public async Task RunAsync_NoExclusionsProvided_PassesNoExclusions()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" , ")]
+    public async Task RunAsync_ExclusionListIsMissingOrBlank_PassesNoExclusions(string exclusionList)
     {
+        LetExclusionsBe(exclusionList);
+
         await RunAsync();
 
         VerifySettings(settings => settings.ExcludedFiles.Count == 0);
@@ -223,8 +232,8 @@ public class ExtractCommandTest
     private void LetFilesBe(params string[] patterns) =>
         _optionsMock.SetupGet(options => options.Files).Returns(patterns);
 
-    private void LetExclusionsBe(params string[] patterns) =>
-        _optionsMock.SetupGet(options => options.Exclude).Returns(patterns);
+    private void LetExclusionsBe(string exclusionList) =>
+        _optionsMock.SetupGet(options => options.Exclude).Returns(exclusionList);
 
     private void LetArchivesBe(params string[] archives) =>
         _archiveFinderMock

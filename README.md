@@ -76,7 +76,7 @@ The tool can be used from command line or `powershell`. The first argument selec
 | `list` | `l` | List the files in archives without extracting them. |
 
 ``` powershell
-  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
   fileextractor config -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [-p <count>] [--follow-symlinks] [--no-wait]
   fileextractor list "<archive>" [-r] [--no-wait]
 ```
@@ -149,7 +149,7 @@ The verb accepts following command line arguments:
 ### Extracting files named on the command line (`extract`, `x`)
 
 ``` powershell
-  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
+  fileextractor [extract] "<archive>" [<file>...] [-o "<output>"] [-x <file>,...] [--flat] [--archive-folder] [-r] [-p <count>] [--follow-symlinks] [--no-wait]
 ```
 
 This is the default verb, so `extract` (or its alias `x`) can be omitted. The verb accepts following command line arguments:
@@ -161,7 +161,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
   -o, --output             Path to the output directory, created when missing (default: current directory)
 
-  -x, --exclude            Files not to extract, in the same format as the files to extract. Takes all the values that follow it, so put it after the archive and the files, for example: fileextractor a.zip *.txt -x *.tmp *.log
+  -x, --exclude            Comma-separated files not to extract, in the same format as the files to extract, for example *.tmp,*.log
 
   --flat                   Extract all files directly into the output directory, without the folders of the archive
 
@@ -182,7 +182,7 @@ This is the default verb, so `extract` (or its alias `x`) can be omitted. The ve
 
 `-o` or `--output` /optional/ — is the path to the output directory. It is created when it does not exist. If the argument is not provided, the current directory is used.
 
-`-x` or `--exclude` /optional/ — are files that must not be extracted, in the same format as `<file>`. The option takes all the values that follow it, so put it after the files to extract (for example, `fileextractor x a.zip *.txt -x *.tmp *.log`).
+`-x` or `--exclude` /optional/ — is a comma-separated list of files that must not be extracted, each in the same format as `<file>` (for example, `-x "*.tmp,*.log"`). Spaces around the commas are ignored, and a pattern cannot contain a comma. The option can be placed anywhere on the command line.
 
 `--flat` /optional/ — when provided, all files are written directly into `<output>`. By default, the folders of the archive are recreated below `<output>`, like `unzip` and `7z x` do. With `--flat`, a file with the same name as an already extracted one is skipped with a warning.
 
@@ -200,7 +200,7 @@ Examples:
   fileextractor x "C:\Archives\*.7z" "docs/*.txt" "*.dll" -o "C:\Output"
 
   # extract all files except temporary ones, one subdirectory per archive, without the archive folders
-  fileextractor x "C:\Archives" -o "C:\Output" --archive-folder --flat -x "*.tmp"
+  fileextractor x "C:\Archives" -o "C:\Output" --archive-folder --flat -x "*.tmp,*.log"
 ```
 
 ### Listing archive contents (`list`, `l`)

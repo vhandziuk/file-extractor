@@ -24,12 +24,23 @@ public class ExtractOptionsTest
     [InlineData("x")]
     public void ParseArguments_VerbOrAliasGiven_ParsesExtractOptions(string verb)
     {
-        var result = ParseArguments(verb, @"C:\Source\SomeArchive.zip", "--flat", "--archive-folder", "-x", "*.tmp", "*.log");
+        var result = ParseArguments(verb, @"C:\Source\SomeArchive.zip", "--flat", "--archive-folder", "-x", "*.tmp,*.log");
 
         var options = Assert.IsType<ExtractOptions>(Assert.IsType<Parsed<object>>(result).Value);
         Assert.True(options.Flat);
         Assert.True(options.ArchiveFolder);
-        Assert.Equal(["*.tmp", "*.log"], options.Exclude);
+        Assert.Equal("*.tmp,*.log", options.Exclude);
+    }
+
+    [Fact]
+    public void ParseArguments_ExcludeGivenBeforeArchiveAndFiles_TakesOnlyItsOwnValue()
+    {
+        var result = ParseArguments("-x", "*.tmp,*.log", @"C:\Source\SomeArchive.zip", "*.txt");
+
+        var options = Assert.IsType<ExtractOptions>(Assert.IsType<Parsed<object>>(result).Value);
+        Assert.Equal("*.tmp,*.log", options.Exclude);
+        Assert.Equal(@"C:\Source\SomeArchive.zip", options.Archive);
+        Assert.Equal(["*.txt"], options.Files);
     }
 
     [Fact]

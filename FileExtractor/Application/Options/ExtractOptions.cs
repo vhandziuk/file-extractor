@@ -14,8 +14,9 @@ internal sealed class ExtractOptions : ExtractionOptionsBase, IExtractOptions
     public IEnumerable<string> Files { get; set; } = [];
     [Option('o', "output", Required = false, HelpText = "Path to the output directory, created when missing (default: current directory)")]
     public string? Output { get; set; }
-    [Option('x', "exclude", Required = false, HelpText = "Files not to extract, in the same format as the files to extract. Takes all the values that follow it, so put it after the archive and the files, for example: fileextractor a.zip *.txt -x *.tmp *.log")]
-    public IEnumerable<string> Exclude { get; set; } = [];
+    // a single value: a list option would also take the archive and files that follow it
+    [Option('x', "exclude", Required = false, HelpText = "Comma-separated files not to extract, in the same format as the files to extract, for example *.tmp,*.log")]
+    public string? Exclude { get; set; }
     [Option("flat", Required = false, HelpText = "Extract all files directly into the output directory, without the folders of the archive")]
     public bool Flat { get; set; }
     [Option("archive-folder", Required = false, HelpText = "Extract each archive into a subdirectory of the output directory named after the archive")]
@@ -32,8 +33,7 @@ internal sealed class ExtractOptions : ExtractionOptionsBase, IExtractOptions
             new ExtractOptions { Archive = @"C:\Downloads\package.zip" }),
         new("Extract the text files of the docs folder and all DLLs from every 7z archive in a folder",
             new ExtractOptions { Archive = @"C:\Archives\*.7z", Files = ["docs/*.txt", "*.dll"], Output = @"C:\Output" }),
-        // no --exclude example: the generated command lists options before the archive, which --exclude would consume
-        new("Extract all files of every archive in a folder into one subdirectory per archive, without the archive folders",
-            new ExtractOptions { Archive = @"C:\Archives", Output = @"C:\Output", ArchiveFolder = true, Flat = true })
+        new("Extract all files except temporary ones into one subdirectory per archive, without the archive folders",
+            new ExtractOptions { Archive = @"C:\Archives", Output = @"C:\Output", ArchiveFolder = true, Flat = true, Exclude = "*.tmp,*.log" })
     ];
 }
