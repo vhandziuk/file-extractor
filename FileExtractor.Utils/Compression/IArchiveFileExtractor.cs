@@ -13,4 +13,9 @@ public interface IArchiveFileExtractor
     /// and returns the configured files that were found in the archive.
     /// </summary>
     IReadOnlyCollection<FileInfoData> ExtractFiles(string archiveFile, IExtractionContext context, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns the full names of the file entries of <paramref name="archiveFile"/>, in archive order, without extracting them.
+    /// </summary>
+    IReadOnlyList<string> ListEntries(string archiveFile);
 }

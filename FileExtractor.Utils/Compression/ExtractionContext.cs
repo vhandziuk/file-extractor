@@ -3,16 +3,22 @@ using FileExtractor.Data;
 
 namespace FileExtractor.Utils.Compression;
 
-public sealed class ExtractionContext(string outputPath, IReadOnlyList<FileInfoData> files, bool followSymbolicLinks) : IExtractionContext
+public sealed class ExtractionContext(ExtractionSettings settings) : IExtractionContext
 {
     // Windows paths are case-insensitive
     private readonly ConcurrentDictionary<string, byte> _claimedFilePaths = new(StringComparer.OrdinalIgnoreCase);
 
-    public string OutputPath => outputPath;
+    public string OutputPath => settings.OutputPath;
 
-    public IReadOnlyList<FileInfoData> Files => files;
+    public IReadOnlyList<FileInfoData> Files => settings.Files;
 
-    public bool FollowSymbolicLinks => followSymbolicLinks;
+    public IReadOnlyList<FileInfoData> ExcludedFiles => settings.ExcludedFiles;
+
+    public bool FollowSymbolicLinks => settings.FollowSymbolicLinks;
+
+    public bool PreserveEntryPaths => settings.PreserveEntryPaths;
+
+    public bool UseArchiveFolders => settings.UseArchiveFolders;
 
     public bool TryClaimFilePath(string path) => _claimedFilePaths.TryAdd(path, 0);
 }

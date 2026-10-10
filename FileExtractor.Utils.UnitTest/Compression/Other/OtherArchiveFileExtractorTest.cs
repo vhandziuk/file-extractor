@@ -98,6 +98,20 @@ public class OtherArchiveFileExtractorTest
         _archiveEntryExtractorMock.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public void ListEntries_ReaderHasEntries_ReturnsTheirFullNamesAndDisposesReader()
+    {
+        var readerMock = LetArchiveEntriesBe(
+            Mock.Of<IGenericArchiveEntry>(entry => entry.FullName == "SomeName1.dat"),
+            Mock.Of<IGenericArchiveEntry>(entry => entry.FullName == "SomeDirectory/SomeName2.dat"));
+
+        var result = _sut.ListEntries(SomeArchiveFileName);
+
+        Assert.Equal(["SomeName1.dat", "SomeDirectory/SomeName2.dat"], result);
+        readerMock.Verify(reader => reader.Dispose(), Times.Once);
+        _archiveEntryExtractorMock.VerifyNoOtherCalls();
+    }
+
     private Mock<IOtherArchiveReader> LetArchiveEntriesBe(params IGenericArchiveEntry[] entries)
     {
         var remainingEntries = new Queue<IGenericArchiveEntry>(entries);

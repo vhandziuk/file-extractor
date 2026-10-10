@@ -5,16 +5,13 @@ namespace FileExtractor.Utils.Compression;
 public interface IArchiveExtractor
 {
     /// <summary>
-    /// Extracts the configured files from all <paramref name="archiveFiles"/>, processing up to
-    /// <paramref name="maxDegreeOfParallelism"/> archives at the same time, and reports configured
-    /// files that were not found in any archive. Destinations below <paramref name="outputPath"/> that go
-    /// through a symbolic link or junction are skipped unless <paramref name="followSymbolicLinks"/> is set.
+    /// Extracts the files of <paramref name="settings"/> from all <paramref name="archiveFiles"/>, processing up to
+    /// <see cref="ExtractionSettings.MaxDegreeOfParallelism"/> archives at the same time, and reports
+    /// files that were not found in any archive. Destinations below the output path that go through a symbolic
+    /// link or junction are skipped unless <see cref="ExtractionSettings.FollowSymbolicLinks"/> is set.
     /// </summary>
     Task<IReadOnlyCollection<FileInfoData>> ExtractFilesAsync(
         IReadOnlyCollection<string> archiveFiles,
-        string outputPath,
-        IReadOnlyList<FileInfoData> fileData,
-        int maxDegreeOfParallelism,
-        bool followSymbolicLinks,
+        ExtractionSettings settings,
         CancellationToken cancellationToken);
 }

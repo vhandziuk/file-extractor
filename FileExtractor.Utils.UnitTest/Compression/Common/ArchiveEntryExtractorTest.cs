@@ -37,9 +37,13 @@ public class ArchiveEntryExtractorTest
             .Setup(validator => validator.IsValidFileName(It.IsAny<string>()))
             .Returns(true);
         _pathValidatorMock
+            .Setup(validator => validator.IsValidRelativePath(It.IsAny<string>()))
+            .Returns(true);
+        _pathValidatorMock
             .Setup(validator => validator.IsContained(It.IsAny<string>(), It.IsAny<string>()))
             .Returns(true);
         LetConfiguredFilesBe();
+        LetExcludedFilesBe();
 
         _sut = new ArchiveEntryExtractor(
             _archiveEntryMatcherMock.Object,
@@ -247,6 +251,136 @@ public class ArchiveEntryExtractorTest
         Assert.Empty(result);
         _loggerMock.Verify(logger =>
             logger.Warning("Archive entry {Entry} has an unsafe name. Skipping it", @"SomeDirectory/..\SomeName.dat"), Times.Once);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Theory]
+    [InlineData("Root/Nested/SomeName.dat", @"Root\Nested")]
+    [InlineData(@"Root\Nested\SomeName.dat", @"Root\Nested")]
+    [InlineData("./Root//Nested/SomeName.dat", @"Root\Nested")]
+    [InlineData("/Root/SomeName.dat", "Root")]
+    [InlineData("SomeName.dat", "")]
+    public void ExtractEntries_EntryPathsArePreserved_ExtractsEntryToItsArchiveFolder(string fullName, string expectedEntryDirectory)
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", fullName);
+        var fileInfo = new FileInfoData("Test", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        var expectedDirectory = Path.Combine(SomeOutputPath, "Test", expectedEntryDirectory);
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        _pathValidatorMock.Verify(validator => validator.IsValidRelativePath(expectedEntryDirectory), Times.Once);
+        _fileSystemUtilsMock.Verify(utils => utils.CreateDirectory(expectedDirectory), Times.Once);
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(expectedDirectory, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_EntryPathsAreNotPreserved_ExtractsEntryWithoutItsArchiveFolder()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "Root/Nested/SomeName.dat");
+        var fileInfo = new FileInfoData("", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+
+        ExtractEntries(entryMock.Object);
+
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_PreservedEntryPathIsUnsafe_SkipsEntry()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dll", "Root/../../SomeName.dll");
+        var fileInfo = new FileInfoData("", "*.dll", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        LetRelativePathBeUnsafe(@"Root\..\..");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Archive entry {Entry} has an unsafe path. Skipping it", "Root/../../SomeName.dll"), Times.Once);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Fact]
+    public void ExtractEntries_ArchiveFoldersAreUsed_ExtractsEntryToFolderNamedAfterArchive()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "Root/SomeName.dat");
+        var fileInfo = new FileInfoData("Test", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetEntryPathsBePreserved();
+        LetArchiveFoldersBeUsed();
+        var expectedFilePath = Path.Combine(SomeOutputPath, "SomeArchive", "Test", "Root", "SomeName.dat");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        entryMock.Verify(entry => entry.ExtractToFile(expectedFilePath, false), Times.Once);
+        _pathValidatorMock.Verify(validator => validator.IsContained(SomeOutputPath, expectedFilePath), Times.Once);
+        _reparsePointGuardMock.Verify(guard => guard.ContainsReparsePoint(SomeOutputPath, expectedFilePath), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_ArchiveFolderNameIsUnsafe_SkipsArchive()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "SomeName.dat");
+        var fileInfo = new FileInfoData("", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetArchiveFoldersBeUsed();
+        LetFileNameBeUnsafe("SomeArchive");
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        _loggerMock.Verify(logger =>
+            logger.Warning("Archive {Archive} cannot be extracted to a folder named {Folder}. Skipping it", SomeArchiveFileName, "SomeArchive"), Times.Once);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Fact]
+    public void ExtractEntries_EntryMatchesExclusion_DoesNotExtractEntry()
+    {
+        var excludedEntryMock = GetMockedGenericArchiveEntry("SomeName.tmp", "SomeName.tmp");
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", "SomeName.dat");
+        var fileInfo = new FileInfoData("", "*", "");
+        var exclusion = new FileInfoData("", "*.tmp", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetExcludedFilesBe(exclusion);
+        LetEntryMatch(excludedEntryMock, fileInfo, exclusion);
+        LetEntryMatch(entryMock, fileInfo);
+
+        var result = ExtractEntries(excludedEntryMock.Object, entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        excludedEntryMock.Verify(entry =>
+            entry.ExtractToFile(It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(Path.Combine(SomeOutputPath, "SomeName.dat"), false), Times.Once);
+    }
+
+    [Fact]
+    public void ExtractEntries_OnlyEntryMatchesExclusion_ReportsNoFiles()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.tmp", "SomeName.tmp");
+        var fileInfo = new FileInfoData("", "*", "");
+        var exclusion = new FileInfoData("", "*.tmp", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetExcludedFilesBe(exclusion);
+        LetEntryMatch(entryMock, fileInfo, exclusion);
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
         VerifyNothingWritten(entryMock);
     }
 
@@ -478,6 +612,11 @@ public class ArchiveEntryExtractorTest
             .SetupGet(context => context.Files)
             .Returns(files);
 
+    private void LetExcludedFilesBe(params FileInfoData[] files) =>
+        _contextMock
+            .SetupGet(context => context.ExcludedFiles)
+            .Returns(files);
+
     private void LetEntryMatch(Mock<IGenericArchiveEntry> entryMock, params FileInfoData[] files)
     {
         var entry = entryMock.Object;
@@ -514,9 +653,24 @@ public class ArchiveEntryExtractorTest
             .Setup(guard => guard.ContainsReparsePoint(SomeOutputPath, path))
             .Returns(true);
 
+    private void LetRelativePathBeUnsafe(string path) =>
+        _pathValidatorMock
+            .Setup(validator => validator.IsValidRelativePath(path))
+            .Returns(false);
+
     private void LetSymbolicLinksBeFollowed() =>
         _contextMock
             .SetupGet(context => context.FollowSymbolicLinks)
+            .Returns(true);
+
+    private void LetEntryPathsBePreserved() =>
+        _contextMock
+            .SetupGet(context => context.PreserveEntryPaths)
+            .Returns(true);
+
+    private void LetArchiveFoldersBeUsed() =>
+        _contextMock
+            .SetupGet(context => context.UseArchiveFolders)
             .Returns(true);
 
     private void VerifyNothingWritten(Mock<IGenericArchiveEntry> entryMock)

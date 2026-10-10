@@ -14,12 +14,17 @@ public sealed class ArchiveEntryExtractor(
     private const int FileExistsHResult = unchecked((int)0x80070050);
     private const int AlreadyExistsHResult = unchecked((int)0x800700B7);
 
+    private static readonly char[] _directorySeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     public IReadOnlyCollection<FileInfoData> ExtractEntries(
         string archiveFile,
         IEnumerable<IGenericArchiveEntry> entries,
         IExtractionContext context,
         CancellationToken cancellationToken)
     {
+        if (!TryGetArchiveOutputPath(archiveFile, context, out var archiveOutputPath))
+            return [];
+
         var extractedFiles = new HashSet<FileInfoData>();
         var entryCount = 0;
 
@@ -27,7 +32,7 @@ public sealed class ArchiveEntryExtractor(
         {
             cancellationToken.ThrowIfCancellationRequested();
             entryCount++;
-            extractedFiles.UnionWith(ExtractEntry(entry, context));
+            extractedFiles.UnionWith(ExtractEntry(entry, archiveOutputPath, context));
         }
 
         if (entryCount == 0)
@@ -36,13 +41,33 @@ public sealed class ArchiveEntryExtractor(
         return extractedFiles;
     }
 
-    private FileInfoData[] ExtractEntry(IGenericArchiveEntry entry, IExtractionContext context)
+    // With archive folders, each archive is extracted into a folder named after it, so entries with the same
+    // name in different archives do not collide. The folder stays below the output path, where the
+    // containment and link checks of every destination start.
+    private bool TryGetArchiveOutputPath(string archiveFile, IExtractionContext context, out string archiveOutputPath)
+    {
+        archiveOutputPath = context.OutputPath;
+        if (!context.UseArchiveFolders)
+            return true;
+
+        var folderName = Path.GetFileNameWithoutExtension(archiveFile);
+        if (!pathValidator.IsValidFileName(folderName))
+        {
+            logger.Warning("Archive {Archive} cannot be extracted to a folder named {Folder}. Skipping it", archiveFile, folderName);
+            return false;
+        }
+
+        archiveOutputPath = Path.Combine(context.OutputPath, folderName);
+        return true;
+    }
+
+    private FileInfoData[] ExtractEntry(IGenericArchiveEntry entry, string archiveOutputPath, IExtractionContext context)
     {
         var matchingFiles = context.Files
             .Where(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName))
             .ToArray();
-        if (matchingFiles.Length == 0)
-            return matchingFiles;
+        if (matchingFiles.Length == 0 || IsExcluded(entry, context))
+            return [];
 
         // The archive is untrusted: a name such as "..\file.dll", stored by a non-Windows zip tool,
         // would otherwise be written outside the destination folder.
@@ -52,10 +77,17 @@ public sealed class ArchiveEntryExtractor(
             return [];
         }
 
+        var entryDirectory = GetEntryDirectory(entry, context);
+        if (!pathValidator.IsValidRelativePath(entryDirectory))
+        {
+            logger.Warning("Archive entry {Entry} has an unsafe path. Skipping it", entry.FullName);
+            return [];
+        }
+
         // Several configuration rows (e.g. a name and a wildcard) can match the same entry and folder;
         // the entry is written to each distinct folder once.
         var destinations = matchingFiles
-            .GroupBy(fileInfo => Path.Combine(context.OutputPath, fileInfo.Directory), StringComparer.OrdinalIgnoreCase);
+            .GroupBy(fileInfo => Path.Combine(archiveOutputPath, fileInfo.Directory, entryDirectory), StringComparer.OrdinalIgnoreCase);
 
         var extractedFiles = new List<FileInfoData>();
         string extractedFilePath = null;
@@ -72,6 +104,23 @@ public sealed class ArchiveEntryExtractor(
         }
 
         return [.. extractedFiles];
+    }
+
+    // An excluded entry is skipped silently and its matching rows stay unextracted, like an entry that does not match.
+    private bool IsExcluded(IGenericArchiveEntry entry, IExtractionContext context) =>
+        context.ExcludedFiles.Any(fileInfo => archiveEntryMatcher.IsMatch(fileInfo, entry.Name, entry.FullName));
+
+    // The folders inside the archive, without the "." and empty segments that tar archives often store
+    // ("./docs/file.txt"), so equal destinations get equal paths. They come from the untrusted archive
+    // and are validated by the caller.
+    private static string GetEntryDirectory(IGenericArchiveEntry entry, IExtractionContext context)
+    {
+        if (!context.PreserveEntryPaths)
+            return string.Empty;
+
+        var segments = entry.FullName.Split(_directorySeparators);
+
+        return string.Join(Path.DirectorySeparatorChar, segments[..^1].Where(segment => segment is not ("" or ".")));
     }
 
     private string ExtractTo(

@@ -90,6 +90,23 @@ public class ZipFileExtractorTest
         _archiveEntryExtractorMock.VerifyNoOtherCalls();
     }
 
+    [Fact]
+    public void ListEntries_ArchiveContainsEntries_ReturnsTheirFullNamesAndDisposesArchive()
+    {
+        LetArchiveEntriesBe(
+            GetMockedGenericArchiveEntry("SomeName1.dat", "SomeName1.dat"),
+            GetMockedGenericArchiveEntry("SomeName2.dat", "SomeDirectory/SomeName2.dat"));
+
+        var result = _sut.ListEntries(SomeArchiveFileName);
+
+        Assert.Equal(["SomeName1.dat", "SomeDirectory/SomeName2.dat"], result);
+        _archiveMock.Verify(archive => archive.Dispose(), Times.Once);
+        _archiveEntryExtractorMock.VerifyNoOtherCalls();
+    }
+
+    private static IGenericArchiveEntry GetMockedGenericArchiveEntry(string name, string fullName) =>
+        Mock.Of<IGenericArchiveEntry>(entry => entry.Name == name && entry.FullName == fullName);
+
     private void LetArchiveEntriesBe(params IGenericArchiveEntry[] entries) =>
         _archiveMock
             .SetupGet(archive => archive.Entries)

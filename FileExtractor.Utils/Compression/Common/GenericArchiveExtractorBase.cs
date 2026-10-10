@@ -12,4 +12,11 @@ public abstract class GenericArchiveExtractorBase(
 
         return archiveEntryExtractor.ExtractEntries(archiveFile, archive.Entries, context, cancellationToken);
     }
+
+    public IReadOnlyList<string> ListEntries(string archiveFile)
+    {
+        using var archive = archiveFileUtils.OpenRead(archiveFile);
+
+        return [.. archive.Entries.Select(entry => entry.FullName)];
+    }
 }

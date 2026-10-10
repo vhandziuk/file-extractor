@@ -9,6 +9,7 @@ using StrongInject;
 namespace FileExtractor.Utils.DiRegistration;
 
 [Register(typeof(EnvironmentWrapper), Scope.SingleInstance, typeof(IEnvironment))]
+[Register(typeof(ConsoleWrapper), Scope.SingleInstance, typeof(IConsole))]
 [Register(typeof(FileSystemUtils), Scope.SingleInstance, typeof(IFileSystemUtils))]
 [Register(typeof(PathValidator), Scope.SingleInstance, typeof(IPathValidator))]
 [Register(typeof(ReparsePointGuard), Scope.SingleInstance, typeof(IReparsePointGuard))]
@@ -27,6 +28,7 @@ namespace FileExtractor.Utils.DiRegistration;
 [Register(typeof(ArchiveEntryMatcher), Scope.SingleInstance, typeof(IArchiveEntryMatcher))]
 [Register(typeof(ArchiveEntryExtractor), Scope.SingleInstance, typeof(IArchiveEntryExtractor))]
 [Register(typeof(ArchiveTypeResolver), Scope.SingleInstance, typeof(IArchiveTypeResolver))]
+[Register(typeof(ArchiveFinder), Scope.SingleInstance, typeof(IArchiveFinder))]
 [Register(typeof(ArchiveExtractorFactory), Scope.SingleInstance, typeof(IArchiveExtractorFactory))]
 [Register(typeof(ArchiveExtractor), Scope.SingleInstance, typeof(IArchiveExtractor))]
 public sealed class FileExtractorUtilsModule

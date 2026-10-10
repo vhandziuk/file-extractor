@@ -14,6 +14,13 @@ public sealed class OtherArchiveFileExtractor(
         return archiveEntryExtractor.ExtractEntries(archiveFile, ReadEntries(reader), context, cancellationToken);
     }
 
+    public IReadOnlyList<string> ListEntries(string archiveFile)
+    {
+        using var reader = otherArchiveFile.OpenReader(archiveFile);
+
+        return [.. ReadEntries(reader).Select(entry => entry.FullName)];
+    }
+
     private static IEnumerable<IGenericArchiveEntry> ReadEntries(IOtherArchiveReader reader)
     {
         while (reader.MoveToNextEntry())

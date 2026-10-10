@@ -13,13 +13,24 @@ public class ExtractionContextTest
 
     private static readonly FileInfoData[] SomeFiles = [new("", "SomeName.dat", "SomeDirectory")];
 
-    private readonly ExtractionContext _sut = new(SomeOutputPath, SomeFiles, false);
+    private readonly ExtractionContext _sut = new(new ExtractionSettings(SomeOutputPath, SomeFiles, 1));
 
     [Fact]
     public void Constructor_ValuesProvided_ExposesOutputPathAndFiles()
     {
         Assert.Equal(SomeOutputPath, _sut.OutputPath);
         Assert.Same(SomeFiles, _sut.Files);
+        Assert.Empty(_sut.ExcludedFiles);
+    }
+
+    [Fact]
+    public void Constructor_ExcludedFilesProvided_ExposesThem()
+    {
+        FileInfoData[] someExcludedFiles = [new("", "*.tmp", "")];
+
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { ExcludedFiles = someExcludedFiles });
+
+        Assert.Same(someExcludedFiles, context.ExcludedFiles);
     }
 
     [Theory]
@@ -27,9 +38,29 @@ public class ExtractionContextTest
     [InlineData(true)]
     public void Constructor_FollowSymbolicLinksProvided_ExposesIt(bool followSymbolicLinks)
     {
-        var context = new ExtractionContext(SomeOutputPath, SomeFiles, followSymbolicLinks);
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { FollowSymbolicLinks = followSymbolicLinks });
 
         Assert.Equal(followSymbolicLinks, context.FollowSymbolicLinks);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_PreserveEntryPathsProvided_ExposesIt(bool preserveEntryPaths)
+    {
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { PreserveEntryPaths = preserveEntryPaths });
+
+        Assert.Equal(preserveEntryPaths, context.PreserveEntryPaths);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_UseArchiveFoldersProvided_ExposesIt(bool useArchiveFolders)
+    {
+        var context = new ExtractionContext(new ExtractionSettings(SomeOutputPath, SomeFiles, 1) { UseArchiveFolders = useArchiveFolders });
+
+        Assert.Equal(useArchiveFolders, context.UseArchiveFolders);
     }
 
     [Fact]
