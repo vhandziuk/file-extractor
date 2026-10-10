@@ -299,6 +299,42 @@ public class ArchiveEntryExtractorTest
     }
 
     [Fact]
+    public void ExtractEntries_DestinationContainsReparsePointAndLinksAreFollowed_ExtractsEntry()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
+        var fileInfo = new FileInfoData("Test", "SomeName.dat", "");
+        var destinationFilePath = Path.Combine(SomeOutputPath, "Test", "SomeName.dat");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetPathContainReparsePoint(destinationFilePath);
+        LetSymbolicLinksBeFollowed();
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Equal([fileInfo], result);
+        entryMock.Verify(entry =>
+            entry.ExtractToFile(destinationFilePath, false), Times.Once);
+        _reparsePointGuardMock.Verify(guard =>
+            guard.ContainsReparsePoint(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public void ExtractEntries_LinksAreFollowedAndDestinationIsOutsideOutputPath_SkipsExtraction()
+    {
+        var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
+        var fileInfo = new FileInfoData(@"C:\Windows", "SomeName.dat", "");
+        LetConfiguredFilesBe(fileInfo);
+        LetEntryMatch(entryMock, fileInfo);
+        LetPathBeOutsideOutput(@"C:\Windows\SomeName.dat");
+        LetSymbolicLinksBeFollowed();
+
+        var result = ExtractEntries(entryMock.Object);
+
+        Assert.Empty(result);
+        VerifyNothingWritten(entryMock);
+    }
+
+    [Fact]
     public void ExtractEntries_OneOfTwoDestinationsIsUnsafe_ExtractsToSafeDestinationAndReportsOnlyItsRow()
     {
         var entryMock = GetMockedGenericArchiveEntry("SomeName.dat", @"SomeDirectory\SomeName.dat");
@@ -476,6 +512,11 @@ public class ArchiveEntryExtractorTest
     private void LetPathContainReparsePoint(string path) =>
         _reparsePointGuardMock
             .Setup(guard => guard.ContainsReparsePoint(SomeOutputPath, path))
+            .Returns(true);
+
+    private void LetSymbolicLinksBeFollowed() =>
+        _contextMock
+            .SetupGet(context => context.FollowSymbolicLinks)
             .Returns(true);
 
     private void VerifyNothingWritten(Mock<IGenericArchiveEntry> entryMock)

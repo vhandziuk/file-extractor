@@ -4,23 +4,14 @@ using SharpCompress.Common;
 
 namespace FileExtractor.Utils.Compression.Rar;
 
-internal sealed class RarArchiveEntryWrapper : IGenericArchiveEntry
+internal sealed class RarArchiveEntryWrapper : SharpCompressEntryWrapperBase
 {
     private readonly IArchiveEntry _rarArchiveEntry;
 
-    public RarArchiveEntryWrapper(IArchiveEntry rarArchiveEntry) =>
+    public RarArchiveEntryWrapper(IArchiveEntry rarArchiveEntry) : base(rarArchiveEntry) =>
         _rarArchiveEntry = rarArchiveEntry;
 
-    public string Name => Path.GetFileName(_rarArchiveEntry.Key);
-
-    public string FullName => _rarArchiveEntry.Key;
-
-    public void ExtractToFile(string destinationFileName, bool overwrite) =>
-        _rarArchiveEntry.WriteToFile(
-            destinationFileName,
-            new ExtractionOptions
-            {
-                ExtractFullPath = true,
-                Overwrite = overwrite
-            });
+    // the default options validate the entry's CRC
+    protected override void WriteTo(Stream stream) =>
+        _rarArchiveEntry.WriteTo(stream, new ExtractionOptions());
 }

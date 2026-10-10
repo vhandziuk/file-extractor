@@ -64,7 +64,7 @@ public sealed class ArchiveEntryExtractor(
             var destinationFilePath = Path.Combine(destination.Key, entry.Name);
 
             // rows of an unsafe destination stay unextracted, so they are reported as missing
-            if (!IsSafeDestination(destinationFilePath, context.OutputPath))
+            if (!IsSafeDestination(destinationFilePath, context))
                 continue;
 
             extractedFiles.AddRange(destination);
@@ -95,16 +95,18 @@ public sealed class ArchiveEntryExtractor(
         return extractedFilePath ?? destinationFilePath;
     }
 
-    private bool IsSafeDestination(string destinationFilePath, string outputPath)
+    private bool IsSafeDestination(string destinationFilePath, IExtractionContext context)
     {
+        var outputPath = context.OutputPath;
         if (!pathValidator.IsContained(outputPath, destinationFilePath))
         {
             logger.Warning("Destination {Path} is outside the output path {OutputPath}. Skipping extraction", destinationFilePath, outputPath);
             return false;
         }
 
-        // Creating the folders and the file would follow a junction or symbolic link planted below the output path.
-        if (reparsePointGuard.ContainsReparsePoint(outputPath, destinationFilePath))
+        // Creating the folders and the file would follow a junction or symbolic link planted below the output path,
+        // unless the user explicitly allowed it. The containment check above still applies to the path as written.
+        if (!context.FollowSymbolicLinks && reparsePointGuard.ContainsReparsePoint(outputPath, destinationFilePath))
         {
             logger.Warning("Destination {Path} contains a symbolic link or junction. Skipping extraction", destinationFilePath);
             return false;

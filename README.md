@@ -65,7 +65,7 @@ test08.txt,Output,Subfolder02
 The tool can be used from command line or `powershell` as follows:
 
 ``` powershell
-  fileextractor -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [--no-wait] [-p <count>]
+  fileextractor -s "<source>" [-d "<destination>"] [-r] [-c "<configuration>"] [--cache-configuration] [--no-wait] [-p <count>] [--follow-symlinks]
 ```
 
 The application accepts following command line arguments:
@@ -85,6 +85,8 @@ The application accepts following command line arguments:
 
   -p, --max-parallelism    Maximum number of archives extracted in parallel (default: number of processors)
 
+  --follow-symlinks        Extract files into folders below the destination that are symbolic links or junctions
+
   --help                   Display this help screen.
 
   --version                Display version information.
@@ -103,6 +105,8 @@ The application accepts following command line arguments:
 `--no-wait` /optional/ — when provided, the application exits right after the extraction instead of waiting for a key press. Useful for scripts and automation.
 
 `-p` or `--max-parallelism` /optional/ — is the maximum number of archives extracted at the same time. If the argument is not provided or is not a positive number, the number of processors is used. Lower it (for example, `-p 1`) when the archives are on a slow hard drive.
+
+`--follow-symlinks` /optional/ — when provided, files are also extracted into subfolders of `<destination>` that are symbolic links or junctions (for example, a subfolder linked to another drive). By default, such destinations are skipped with a warning, because a link planted below the destination could redirect the extraction anywhere. Use it only when you trust everyone who can write to `<destination>`. Destinations outside `<destination>` remain rejected, and the log and cached configuration folders are protected regardless of this option.
 
 Pressing `Ctrl+C` stops the extraction after the files currently being written; partially extracted files are removed. Pressing `Ctrl+C` again terminates the application immediately.
 
@@ -125,7 +129,7 @@ The help screen and application version can be displayed with the following comm
 Archives and configuration files are treated as untrusted input:
 
 - Archive entries whose names are not plain file names (path separators, `..`, alternate data streams, reserved device names such as `CON`) are skipped, and no file is ever written outside the destination path.
-- Files are never written through a symbolic link or junction below the destination path, and existing files are never overwritten.
+- Files are not written through a symbolic link or junction below the destination path unless `--follow-symlinks` is provided, and existing files are never overwritten.
 - Logs and the cached configuration are kept per user, so another user cannot redirect them; the log folder is labeled with Medium integrity, even when the tool runs elevated.
 - Native DLLs are not loaded from the current folder or from `PATH`.
 

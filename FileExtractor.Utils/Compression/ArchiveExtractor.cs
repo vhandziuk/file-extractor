@@ -17,11 +17,12 @@ public sealed class ArchiveExtractor(
         string outputPath,
         IReadOnlyList<FileInfoData> fileData,
         int maxDegreeOfParallelism,
+        bool followSymbolicLinks,
         CancellationToken cancellationToken)
     {
         logger.Information("Processing files");
 
-        var context = new ExtractionContext(outputPath, fileData);
+        var context = new ExtractionContext(outputPath, fileData, followSymbolicLinks);
         var extractedFiles = new ConcurrentBag<FileInfoData>();
 
         await taskRunner.ForEachAsync(

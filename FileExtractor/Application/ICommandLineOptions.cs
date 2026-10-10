@@ -9,4 +9,5 @@ internal interface ICommandLineOptions
     bool CacheConfiguration { get; }
     bool NoWait { get; }
     int? MaxParallelism { get; }
+    bool FollowSymbolicLinks { get; }
 }
